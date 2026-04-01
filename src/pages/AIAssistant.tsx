@@ -119,8 +119,8 @@ export default function AIAssistant() {
           <h1 className="text-2xl font-display font-bold text-accent">AI ASSISTANT</h1>
           <p className="text-sm text-muted-foreground font-mono flex items-center gap-2">
             Powered by Ollama — Local LLM • 100% Private
-            {ollamaStatus === "online" && <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse" title="Ollama connected" />}
-            {ollamaStatus === "offline" && <WifiOff className="w-3 h-3 text-destructive" title="Ollama not reachable" />}
+            {ollamaStatus === "online" && <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />}
+            {ollamaStatus === "offline" && <WifiOff className="w-3 h-3 text-destructive" />}
             {ollamaStatus === "checking" && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </p>
         </div>
