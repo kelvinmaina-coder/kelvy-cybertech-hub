@@ -1,6 +1,8 @@
-import { Shield, Users, Ticket, DollarSign, Cpu, HardDrive, Wifi, Bot, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Shield, Users, Ticket, DollarSign, Cpu, HardDrive, Wifi, Bot, AlertTriangle, CheckCircle } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
 
 const trafficData = [
   { time: "00:00", requests: 120, threats: 3 },
@@ -12,40 +14,51 @@ const trafficData = [
   { time: "Now", requests: 340, threats: 4 },
 ];
 
-const revenueData = [
-  { month: "Jan", revenue: 45000 }, { month: "Feb", revenue: 52000 },
-  { month: "Mar", revenue: 48000 }, { month: "Apr", revenue: 61000 },
-  { month: "May", revenue: 55000 }, { month: "Jun", revenue: 72000 },
-];
-
-const recentEvents = [
-  { type: "threat", message: "Brute force attempt blocked — 192.168.1.45", time: "2m ago", icon: AlertTriangle },
-  { type: "success", message: "Full system backup completed", time: "15m ago", icon: CheckCircle },
-  { type: "info", message: "New client onboarded — Acme Corp", time: "1h ago", icon: Users },
-  { type: "threat", message: "SQL injection attempt detected — /api/users", time: "2h ago", icon: AlertTriangle },
-  { type: "success", message: "Security scan completed — 0 critical", time: "3h ago", icon: Shield },
-];
-
 export default function Dashboard() {
+  const [stats, setStats] = useState({ clients: 0, tickets: 0, scans: 0, events: 0, revenue: 0 });
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    const load = async () => {
+      const [clientsRes, ticketsRes, scansRes, eventsRes, invoicesRes] = await Promise.all([
+        supabase.from("clients").select("id", { count: "exact", head: true }),
+        supabase.from("tickets").select("id", { count: "exact", head: true }).eq("status", "open"),
+        supabase.from("scans").select("id", { count: "exact", head: true }),
+        supabase.from("security_events").select("*").order("created_at", { ascending: false }).limit(5),
+        supabase.from("invoices").select("amount, status"),
+      ]);
+      const totalRevenue = (invoicesRes.data || []).filter((i: any) => i.status === "paid").reduce((a: number, i: any) => a + Number(i.amount), 0);
+      setStats({
+        clients: clientsRes.count || 0,
+        tickets: ticketsRes.count || 0,
+        scans: scansRes.count || 0,
+        events: (eventsRes.data || []).length,
+        revenue: totalRevenue,
+      });
+      setEvents(eventsRes.data || []);
+    };
+    load();
+
+    const channel = supabase.channel("dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "security_events" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => load())
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-display font-bold text-primary text-glow-green">COMMAND CENTER</h1>
-        <p className="text-sm text-muted-foreground font-mono">Executive Overview — All Systems Operational</p>
+        <p className="text-sm text-muted-foreground font-mono">Executive Overview — Real-Time Data</p>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={Shield} title="Threats Blocked" value="1,284" change="↑ 12% this week" variant="red" />
-        <MetricCard icon={Users} title="Active Clients" value="47" change="↑ 3 new this month" variant="cyan" />
-        <MetricCard icon={Ticket} title="Open Tickets" value="12" change="4 critical" variant="orange" />
-        <MetricCard icon={DollarSign} title="Revenue (KES)" value="725K" change="↑ 18% vs last month" variant="green" />
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={Cpu} title="CPU Usage" value="34%" variant="cyan" />
-        <MetricCard icon={HardDrive} title="Disk" value="42%" variant="green" />
-        <MetricCard icon={Wifi} title="Network" value="98.5%" change="Uptime" variant="green" />
-        <MetricCard icon={Bot} title="AI Queries" value="2.4K" change="Today" variant="purple" />
+        <MetricCard icon={Shield} title="Security Scans" value={String(stats.scans)} variant="red" />
+        <MetricCard icon={Users} title="Active Clients" value={String(stats.clients)} variant="cyan" />
+        <MetricCard icon={Ticket} title="Open Tickets" value={String(stats.tickets)} variant="orange" />
+        <MetricCard icon={DollarSign} title="Revenue (KES)" value={stats.revenue > 0 ? `${(stats.revenue / 1000).toFixed(0)}K` : "0"} variant="green" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -64,29 +77,18 @@ export default function Dashboard() {
         </div>
 
         <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">REVENUE TREND (KES)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={revenueData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(222 30% 18%)" />
-              <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(215 20% 55%)" }} />
-              <YAxis tick={{ fontSize: 10, fill: "hsl(215 20% 55%)" }} />
-              <Tooltip contentStyle={{ background: "hsl(222 44% 10%)", border: "1px solid hsl(222 30% 18%)", borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="revenue" fill="hsl(157 100% 50%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      <div className="rounded-lg border border-border bg-card p-4">
-        <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">LIVE EVENT FEED</h3>
-        <div className="space-y-2">
-          {recentEvents.map((event, i) => (
-            <div key={i} className="flex items-center gap-3 p-2 rounded-md bg-muted/30 text-sm">
-              <event.icon className={`w-4 h-4 shrink-0 ${event.type === "threat" ? "text-destructive" : event.type === "success" ? "text-primary" : "text-secondary"}`} />
-              <span className="flex-1 text-foreground">{event.message}</span>
-              <span className="text-xs text-muted-foreground font-mono shrink-0">{event.time}</span>
-            </div>
-          ))}
+          <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">LIVE EVENT FEED</h3>
+          <div className="space-y-2">
+            {events.length === 0 ? (
+              <p className="text-sm text-muted-foreground font-mono text-center py-4">No security events yet</p>
+            ) : events.map((event: any, i: number) => (
+              <div key={i} className="flex items-center gap-3 p-2 rounded-md bg-muted/30 text-sm">
+                <AlertTriangle className={`w-4 h-4 shrink-0 ${event.severity === "critical" ? "text-destructive" : event.severity === "warning" ? "text-warning" : "text-secondary"}`} />
+                <span className="flex-1 text-foreground">{event.description || event.event_type}</span>
+                <span className="text-xs text-muted-foreground font-mono shrink-0">{new Date(event.created_at).toLocaleTimeString()}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@ const OLLAMA_BASE_URL = "http://localhost:11434";
 export interface OllamaMessage {
   role: "user" | "assistant" | "system";
   content: string;
+  images?: string[];
 }
 
 export interface OllamaStreamChunk {
@@ -13,7 +14,7 @@ export interface OllamaStreamChunk {
 
 export async function streamOllamaChat({
   messages,
-  model = "llama3",
+  model = "qwen2.5:7b",
   systemPrompt,
   onDelta,
   onDone,
@@ -100,5 +101,24 @@ export async function listOllamaModels(): Promise<string[]> {
     return (data.models || []).map((m: any) => m.name);
   } catch {
     return [];
+  }
+}
+
+export async function analyzeWithOllama(tool: string, output: string, model = "qwen2.5:7b"): Promise<string> {
+  try {
+    const res = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model,
+        prompt: `I ran the security tool '${tool}' and got this output:\n${output.substring(0, 3000)}\n\nPlease explain in plain English:\n1. What was found\n2. What the security risk level is (Critical/High/Medium/Low/Info)\n3. What actions should be taken\nKeep it concise and practical.`,
+        stream: false,
+      }),
+    });
+    if (!res.ok) return "AI analysis unavailable";
+    const data = await res.json();
+    return data.response || "No analysis generated";
+  } catch {
+    return "AI analysis unavailable - Ollama not connected";
   }
 }
