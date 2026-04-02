@@ -14,16 +14,286 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string | null
+          contract_value: number | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: number
+          mpesa_number: string | null
+          name: string
+          phone: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contract_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: number
+          mpesa_number?: string | null
+          name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contract_value?: number | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: number
+          mpesa_number?: string | null
+          name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          client_id: number | null
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: number
+          invoice_number: string | null
+          mpesa_ref: string | null
+          paid_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          client_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: number
+          invoice_number?: string | null
+          mpesa_ref?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: number
+          invoice_number?: string | null
+          mpesa_ref?: string | null
+          paid_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          approved: boolean
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scans: {
+        Row: {
+          ai_analysis: string | null
+          args: Json | null
+          created_at: string
+          created_by: string | null
+          id: number
+          raw_output: string | null
+          severity: string | null
+          target: string | null
+          tool: string
+        }
+        Insert: {
+          ai_analysis?: string | null
+          args?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          raw_output?: string | null
+          severity?: string | null
+          target?: string | null
+          tool: string
+        }
+        Update: {
+          ai_analysis?: string | null
+          args?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          raw_output?: string | null
+          severity?: string | null
+          target?: string | null
+          tool?: string
+        }
+        Relationships: []
+      }
+      security_events: {
+        Row: {
+          created_at: string
+          description: string | null
+          event_type: string | null
+          id: number
+          severity: string | null
+          source_ip: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          event_type?: string | null
+          id?: number
+          severity?: string | null
+          source_ip?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          event_type?: string | null
+          id?: number
+          severity?: string | null
+          source_ip?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      tickets: {
+        Row: {
+          assigned_to: string | null
+          client_id: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: number
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: number
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role:
+        | "super_admin"
+        | "manager"
+        | "security_analyst"
+        | "technician"
+        | "client"
+        | "guest"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +420,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: [
+        "super_admin",
+        "manager",
+        "security_analyst",
+        "technician",
+        "client",
+        "guest",
+      ],
+    },
   },
 } as const
