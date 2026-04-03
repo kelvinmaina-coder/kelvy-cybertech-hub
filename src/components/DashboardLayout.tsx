@@ -6,6 +6,8 @@ import {
   ChevronRight, Zap, Globe, Menu, LogOut
 } from "lucide-react";
 import { useAuth, AppRole } from "@/hooks/useAuth";
+import { useTheme } from "@/hooks/useTheme";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import kelvyLogo from "@/assets/kelvy-logo.png";
 
 interface NavItem {
@@ -36,6 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { roles, profile, signOut } = useAuth();
+  const { scanlineEnabled } = useTheme();
 
   const visibleNav = navItems.filter(item => item.roles.some(r => roles.includes(r)));
 
@@ -64,6 +67,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           );
         })}
       </nav>
+
+      <div className="px-2 pb-1">
+        <ThemeSwitcher collapsed={collapsed} />
+      </div>
 
       {!collapsed && (
         <div className="p-3 border-t border-border">
@@ -99,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarContent />
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-12 border-b border-border flex items-center justify-between px-4 shrink-0 bg-card/50">
+        <header className="h-12 border-b border-border flex items-center justify-between px-4 shrink-0 glass-strong">
           <button className="lg:hidden text-muted-foreground" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
@@ -109,7 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 cyber-grid">
-          <div className="scanline fixed inset-0 pointer-events-none z-50" />
+          {scanlineEnabled && <div className="scanline fixed inset-0 pointer-events-none z-50" />}
           {children}
         </main>
       </div>

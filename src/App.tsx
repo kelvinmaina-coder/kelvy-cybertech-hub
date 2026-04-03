@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
+import { ThemeProvider } from "@/hooks/useTheme";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayout";
 import AuthPage from "@/pages/AuthPage";
@@ -26,91 +27,93 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="*" element={
-              <ProtectedRoute>
-                <DashboardLayout>
-                  <Routes>
-                    <Route path="/" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client", "guest"]}>
-                        <Dashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/security" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "security_analyst"]}>
-                        <SecurityHub />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/ai" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician"]}>
-                        <AIAssistant />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/tools" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "security_analyst", "technician"]}>
-                        <LinuxTools />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/crm" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
-                        <CRM />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/erp" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
-                        <ERP />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/itsm" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager", "technician"]}>
-                        <ITSM />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/analytics" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
-                        <Analytics />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/network" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "security_analyst"]}>
-                        <NetworkHub />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/ide" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "technician"]}>
-                        <IDE />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/automation" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "technician"]}>
-                        <Automation />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/portal" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager", "client"]}>
-                        <ClientPortal />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/settings" element={
-                      <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
-                        <SettingsPage />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </DashboardLayout>
-              </ProtectedRoute>
-            } />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="*" element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Routes>
+                      <Route path="/" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client", "guest"]}>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/security" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "security_analyst"]}>
+                          <SecurityHub />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/ai" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician"]}>
+                          <AIAssistant />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/tools" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "security_analyst", "technician"]}>
+                          <LinuxTools />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/crm" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
+                          <CRM />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/erp" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
+                          <ERP />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/itsm" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "technician"]}>
+                          <ITSM />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/analytics" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
+                          <Analytics />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/network" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "security_analyst"]}>
+                          <NetworkHub />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/ide" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "technician"]}>
+                          <IDE />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/automation" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "technician"]}>
+                          <Automation />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/portal" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "client"]}>
+                          <ClientPortal />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/settings" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
+                          <SettingsPage />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
