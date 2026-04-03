@@ -1,22 +1,32 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Bot, Send, Sparkles, Code, Shield, FileText, Settings2, Loader2, WifiOff, Image, X } from "lucide-react";
+import { Bot, Send, Sparkles, Code, Shield, FileText, Settings2, Loader2, WifiOff, Image, X, Cpu } from "lucide-react";
 import { streamOllamaChat, listOllamaModels, OllamaMessage } from "@/lib/ollama";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  images?: string[]; // base64 images
+  images?: string[];
 }
 
-const SYSTEM_PROMPT = `You are Kelvy AI, the intelligent assistant for Kelvy CyberTech Hub — a comprehensive AI-powered enterprise computing platform. You specialize in:
-- Cybersecurity analysis and guidance
-- Linux security tools (nmap, metasploit, wireshark, etc.)
-- Code generation and review
-- Network analysis and monitoring
-- Business intelligence and operations
-- System administration
-
-You are running locally via Ollama — 100% private, 100% offline capable. Be concise, technical, and actionable. Use markdown formatting for code blocks and structured output.`;
+const PRESETS: { id: string; label: string; icon: any; prompt: string }[] = [
+  {
+    id: "general", label: "General", icon: Bot,
+    prompt: `You are Kelvy AI, the intelligent assistant for Kelvy CyberTech Hub. Be concise, technical, and actionable. Use markdown for code blocks and structured output.`
+  },
+  {
+    id: "security", label: "Security Analyst", icon: Shield,
+    prompt: `You are a cybersecurity expert AI assistant. You specialize in vulnerability analysis, threat detection, penetration testing guidance, and security best practices. Always categorize risks as Critical/High/Medium/Low. Provide actionable remediation steps.`
+  },
+  {
+    id: "coder", label: "Code Assistant", icon: Code,
+    prompt: `You are an expert software engineer AI. You write clean, secure, well-documented code. You review code for bugs, security issues, and performance. You support Python, JavaScript, TypeScript, Bash, Go, Rust, and more. Always use code blocks with language tags.`
+  },
+  {
+    id: "business", label: "Business Advisor", icon: FileText,
+    prompt: `You are a business intelligence AI advisor for a tech company in Kenya. You help with financial analysis, client management, M-Pesa integration, KRA compliance, project planning, and strategic decisions. Give practical, actionable advice.`
+  },
+];
 
 const quickActions = [
   { icon: Code, label: "Generate Code", prompt: "Write a Python script to scan open ports on a network using socket library" },
@@ -27,7 +37,7 @@ const quickActions = [
 
 export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Welcome to **Kelvy AI Assistant**. I'm powered by your local Ollama models — 100% private, 100% offline capable.\n\nMake sure Ollama is running: `OLLAMA_ORIGINS=* ollama serve`\n\nHow can I help you today?" }
+    { role: "assistant", content: "Welcome to **Kelvy AI Assistant**. I'm powered by your local Ollama models — 100% private, 100% offline.\n\nMake sure Ollama is running: `OLLAMA_ORIGINS=* ollama serve`\n\nSelect a persona above or ask me anything!" }
   ]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -36,13 +46,12 @@ export default function AIAssistant() {
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [ollamaStatus, setOllamaStatus] = useState<"checking" | "online" | "offline">("checking");
   const [pendingImages, setPendingImages] = useState<string[]>([]);
+  const [activePreset, setActivePreset] = useState("general");
   const bottomRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   useEffect(() => {
     const checkOllama = async () => {
@@ -88,8 +97,8 @@ export default function AIAssistant() {
     abortRef.current = controller;
     let assistantContent = "";
 
-    // Use vision model if images attached
     const model = userMsg.images?.length ? (models.find(m => m.includes("vl") || m.includes("vision")) || selectedModel) : selectedModel;
+    const preset = PRESETS.find(p => p.id === activePreset);
 
     const ollamaMessages: OllamaMessage[] = newMessages.map(m => ({
       role: m.role,
@@ -100,7 +109,7 @@ export default function AIAssistant() {
     await streamOllamaChat({
       messages: ollamaMessages,
       model,
-      systemPrompt: SYSTEM_PROMPT,
+      systemPrompt: preset?.prompt,
       signal: controller.signal,
       onDelta: (chunk) => {
         assistantContent += chunk;
@@ -119,18 +128,16 @@ export default function AIAssistant() {
         abortRef.current = null;
       },
     });
-  }, [messages, isStreaming, selectedModel, pendingImages, models]);
-
-  const isVisionModel = selectedModel.includes("vl") || selectedModel.includes("vision");
+  }, [messages, isStreaming, selectedModel, pendingImages, models, activePreset]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)]">
+    <div className="flex flex-col h-[calc(100vh-7rem)] animate-fade-in">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-accent">AI ASSISTANT</h1>
           <p className="text-sm text-muted-foreground font-mono flex items-center gap-2">
-            Powered by Ollama — Local LLM • 100% Private
-            {ollamaStatus === "online" && <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />}
+            Ollama — Local LLM • 100% Private
+            {ollamaStatus === "online" && <span className="inline-block w-2 h-2 rounded-full bg-primary animate-pulse" title="Connected" />}
             {ollamaStatus === "offline" && <WifiOff className="w-3 h-3 text-destructive" />}
             {ollamaStatus === "checking" && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
           </p>
@@ -138,19 +145,31 @@ export default function AIAssistant() {
         <div className="relative">
           <button onClick={() => setShowModelPicker(!showModelPicker)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border bg-card text-xs font-mono text-muted-foreground hover:border-accent/40 transition">
-            <Settings2 className="w-3.5 h-3.5" /> {selectedModel}
+            <Cpu className="w-3.5 h-3.5" /> {selectedModel}
           </button>
           {showModelPicker && models.length > 0 && (
-            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-lg z-10 min-w-[180px]">
+            <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-lg shadow-xl z-10 min-w-[200px] p-1 animate-fade-in">
               {models.map(m => (
                 <button key={m} onClick={() => { setSelectedModel(m); setShowModelPicker(false); }}
-                  className={`block w-full text-left px-3 py-2 text-xs font-mono hover:bg-accent/10 transition ${m === selectedModel ? "text-accent" : "text-muted-foreground"}`}>
+                  className={`block w-full text-left px-3 py-2 text-xs font-mono rounded hover:bg-accent/10 transition ${m === selectedModel ? "text-accent bg-accent/5" : "text-muted-foreground"}`}>
                   {m} {(m.includes("vl") || m.includes("vision")) && "👁️"}
                 </button>
               ))}
             </div>
           )}
         </div>
+      </div>
+
+      {/* Persona presets */}
+      <div className="flex gap-1.5 mb-3 overflow-x-auto pb-1">
+        {PRESETS.map(p => (
+          <button key={p.id} onClick={() => setActivePreset(p.id)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono whitespace-nowrap transition ${
+              activePreset === p.id ? "bg-accent/20 text-accent border border-accent/30" : "bg-card border border-border text-muted-foreground hover:text-foreground"
+            }`}>
+            <p.icon className="w-3 h-3" /> {p.label}
+          </button>
+        ))}
       </div>
 
       {messages.length === 1 && (
@@ -173,7 +192,7 @@ export default function AIAssistant() {
                 <Bot className="w-4 h-4 text-accent" />
               </div>
             )}
-            <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
+            <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
               msg.role === "user" ? "bg-primary/20 text-foreground" : "bg-card border border-border text-foreground"
             }`}>
               {msg.images && msg.images.length > 0 && (
@@ -183,7 +202,9 @@ export default function AIAssistant() {
                   ))}
                 </div>
               )}
-              {msg.content}
+              <div className="prose prose-sm prose-invert max-w-none [&_pre]:bg-background [&_pre]:border [&_pre]:border-border [&_pre]:rounded [&_pre]:p-2 [&_code]:text-primary [&_code]:text-xs [&_code]:font-mono [&_a]:text-secondary [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm">
+                <ReactMarkdown>{msg.content}</ReactMarkdown>
+              </div>
             </div>
           </div>
         ))}
@@ -200,7 +221,6 @@ export default function AIAssistant() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Pending images preview */}
       {pendingImages.length > 0 && (
         <div className="flex gap-2 mb-2 px-1">
           {pendingImages.map((img, i) => (

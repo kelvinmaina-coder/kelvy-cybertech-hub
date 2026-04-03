@@ -1,44 +1,127 @@
-import { Zap, Clock, CheckCircle, Play, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { Zap, Clock, CheckCircle, Play, RefreshCw, Plus, X, Loader2 } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
+import { toast } from "sonner";
 
-const workflows = [
-  { name: "Hourly Network Scan", schedule: "Every 1h", lastRun: "45m ago", status: "active", runs: 342 },
-  { name: "Nightly DB Backup", schedule: "Every night 2AM", lastRun: "6h ago", status: "active", runs: 89 },
-  { name: "Morning Digest Report", schedule: "Every day 8AM", lastRun: "10h ago", status: "active", runs: 67 },
-  { name: "Weekly Security Report", schedule: "Every Monday", lastRun: "3d ago", status: "active", runs: 12 },
-  { name: "Client Onboarding", schedule: "On trigger", lastRun: "2d ago", status: "active", runs: 23 },
-  { name: "Auto IP Block (5 fails)", schedule: "On event", lastRun: "1h ago", status: "active", runs: 156 },
-  { name: "High CPU Auto-Restart", schedule: "On alert", lastRun: "5d ago", status: "active", runs: 8 },
-  { name: "Vulnerability Check", schedule: "Every 6h", lastRun: "2h ago", status: "active", runs: 178 },
+interface Workflow {
+  id: number;
+  name: string;
+  schedule: string;
+  lastRun: string;
+  status: "active" | "paused" | "error";
+  runs: number;
+  description: string;
+}
+
+const defaultWorkflows: Workflow[] = [
+  { id: 1, name: "Hourly Network Scan", schedule: "Every 1h", lastRun: "45m ago", status: "active", runs: 342, description: "Runs nmap sweep on local network" },
+  { id: 2, name: "Nightly DB Backup", schedule: "Every night 2AM", lastRun: "6h ago", status: "active", runs: 89, description: "Full database backup to cloud storage" },
+  { id: 3, name: "Morning Digest Report", schedule: "Every day 8AM", lastRun: "10h ago", status: "active", runs: 67, description: "Email daily summary to team" },
+  { id: 4, name: "Weekly Security Report", schedule: "Every Monday", lastRun: "3d ago", status: "active", runs: 12, description: "Comprehensive security posture report" },
+  { id: 5, name: "Client Onboarding", schedule: "On trigger", lastRun: "2d ago", status: "active", runs: 23, description: "Auto-create CRM contact, send welcome email" },
+  { id: 6, name: "Auto IP Block (5 fails)", schedule: "On event", lastRun: "1h ago", status: "active", runs: 156, description: "Block IP after 5 failed login attempts" },
+  { id: 7, name: "High CPU Auto-Restart", schedule: "On alert", lastRun: "5d ago", status: "paused", runs: 8, description: "Restart service when CPU > 90% for 5min" },
+  { id: 8, name: "Vulnerability Check", schedule: "Every 6h", lastRun: "2h ago", status: "active", runs: 178, description: "Run nuclei scanner on all endpoints" },
 ];
 
+const statusColors: Record<string, string> = {
+  active: "text-primary bg-primary/10",
+  paused: "text-warning bg-warning/10",
+  error: "text-destructive bg-destructive/10",
+};
+
 export default function Automation() {
+  const [workflows, setWorkflows] = useState<Workflow[]>(defaultWorkflows);
+  const [showAdd, setShowAdd] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newSchedule, setNewSchedule] = useState("");
+  const [runningId, setRunningId] = useState<number | null>(null);
+
+  const triggerRun = async (wf: Workflow) => {
+    setRunningId(wf.id);
+    toast.info(`Running "${wf.name}"...`);
+    // Simulate run
+    await new Promise(r => setTimeout(r, 2000));
+    setWorkflows(prev => prev.map(w => w.id === wf.id ? { ...w, lastRun: "just now", runs: w.runs + 1 } : w));
+    toast.success(`"${wf.name}" completed`);
+    setRunningId(null);
+  };
+
+  const toggleStatus = (id: number) => {
+    setWorkflows(prev => prev.map(w => w.id === id ? { ...w, status: w.status === "active" ? "paused" : "active" } : w));
+  };
+
+  const addWorkflow = () => {
+    if (!newName.trim()) return;
+    setWorkflows(prev => [...prev, {
+      id: Date.now(),
+      name: newName,
+      schedule: newSchedule || "Manual",
+      lastRun: "never",
+      status: "active",
+      runs: 0,
+      description: "",
+    }]);
+    setNewName("");
+    setNewSchedule("");
+    setShowAdd(false);
+    toast.success("Workflow created");
+  };
+
+  const activeCount = workflows.filter(w => w.status === "active").length;
+  const totalRuns = workflows.reduce((s, w) => s + w.runs, 0);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-primary text-glow-green">AUTOMATION ENGINE</h1>
-        <p className="text-sm text-muted-foreground font-mono">Workflows • Schedules • Event Triggers</p>
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-display font-bold gradient-text">AUTOMATION ENGINE</h1>
+          <p className="text-sm text-muted-foreground font-mono">Workflows • Schedules • Event Triggers</p>
+        </div>
+        <button onClick={() => setShowAdd(!showAdd)}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/20 text-primary text-xs font-mono hover:bg-primary/30 transition">
+          {showAdd ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />} {showAdd ? "Cancel" : "New Workflow"}
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={Zap} title="Active Workflows" value="8" variant="green" />
-        <MetricCard icon={Clock} title="Runs Today" value="47" variant="cyan" />
+        <MetricCard icon={Zap} title="Active Workflows" value={String(activeCount)} variant="green" />
+        <MetricCard icon={Clock} title="Total Runs" value={String(totalRuns)} variant="cyan" />
         <MetricCard icon={CheckCircle} title="Success Rate" value="99.2%" variant="green" />
-        <MetricCard icon={RefreshCw} title="Total Runs" value="875" variant="purple" />
+        <MetricCard icon={RefreshCw} title="Total Workflows" value={String(workflows.length)} variant="purple" />
       </div>
+
+      {showAdd && (
+        <div className="rounded-lg border border-primary/30 bg-card p-4 space-y-3 animate-fade-in">
+          <h3 className="font-display text-sm text-primary">ADD WORKFLOW</h3>
+          <div className="flex gap-3">
+            <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Workflow name"
+              className="flex-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono" />
+            <input value={newSchedule} onChange={e => setNewSchedule(e.target.value)} placeholder="Schedule (e.g. Every 1h)"
+              className="flex-1 bg-background border border-border rounded px-3 py-2 text-sm font-mono" />
+            <button onClick={addWorkflow} className="px-4 py-2 rounded bg-primary text-primary-foreground text-sm font-mono">Add</button>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="font-display text-sm text-primary mb-3 text-glow-green">WORKFLOWS</h3>
         <div className="space-y-1">
-          {workflows.map((w, i) => (
-            <div key={i} className="flex items-center gap-3 p-2 rounded bg-muted/20 text-sm">
-              <span className="w-2 h-2 rounded-full bg-primary shrink-0 animate-pulse-glow" />
-              <span className="flex-1 text-foreground">{w.name}</span>
+          {workflows.map(w => (
+            <div key={w.id} className="flex items-center gap-3 p-2 rounded bg-muted/20 text-sm">
+              <button onClick={() => toggleStatus(w.id)}
+                className={`w-2 h-2 rounded-full shrink-0 cursor-pointer ${w.status === "active" ? "bg-primary animate-pulse-glow" : w.status === "paused" ? "bg-warning" : "bg-destructive"}`}
+                title={`Status: ${w.status}. Click to toggle.`} />
+              <div className="flex-1 min-w-0">
+                <span className="text-foreground block truncate">{w.name}</span>
+                {w.description && <span className="text-[10px] text-muted-foreground block truncate">{w.description}</span>}
+              </div>
               <span className="text-xs text-muted-foreground font-mono hidden sm:block">{w.schedule}</span>
               <span className="text-xs text-muted-foreground font-mono">{w.runs} runs</span>
-              <span className="text-xs text-muted-foreground font-mono hidden md:block">{w.lastRun}</span>
-              <button className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs hover:bg-primary/20">
-                <Play className="w-3 h-3" />
+              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${statusColors[w.status]}`}>{w.status}</span>
+              <button onClick={() => triggerRun(w)} disabled={runningId === w.id}
+                className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs hover:bg-primary/20 disabled:opacity-50">
+                {runningId === w.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
               </button>
             </div>
           ))}

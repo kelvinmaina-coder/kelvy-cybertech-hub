@@ -1,23 +1,24 @@
-## Phase 1 (This message): Foundation
-1. Enable Lovable Cloud for database/auth
-2. Create database schema (profiles, clients, tickets, invoices, scans, etc.)
-3. Build Login/Register page with email verification
-4. Set up role-based access control with route protection
-5. Create Supabase client integration
+## Phase 1: Theme System & Visual Effects
+1. Add 6 color themes (Cyberpunk, Sunset, Forest, Ocean, Royal, Matrix) + theme switcher in sidebar
+2. Add glassmorphism, animated glows, pulse effects, scanline toggle
 
-## Phase 2: Core modules with real data
-6. Connect Dashboard to real DB counts
-7. CRM with full CRUD operations
-8. ITSM with real ticket management
-9. ERP with invoicing
-10. Settings with user management (super_admin only)
+## Phase 2: Module Upgrades (Real CRUD with Supabase)
+3. ERP: Real invoice CRUD (create/edit/delete invoices, M-Pesa ref tracking)
+4. Security Hub: Real scan history from DB, threat severity charts, live event feed
+5. Client Portal: Clients see ONLY their own tickets, invoices, projects
+6. IDE: Code editor with syntax highlighting + send code to Ollama for AI review
+7. Network Hub: Connect to backend for device discovery, real metrics display
 
-## Phase 3: AI & Security
-11. AI Assistant with vision model support (image upload for qwen3-vl)
-12. Linux Tools frontend calling backend API
-13. Security Hub with real scan history from DB
+## Phase 3: AI & Automation Enhancements
+8. AI Assistant: Add system prompt presets (Security Analyst, Code Assistant, Business Advisor), markdown rendering
+9. Upgrade Python backend script with all 70+ tools organized by category
+10. Automation page: Show scheduled tasks with status, add ability to trigger manual runs
 
-## Notes:
-- Backend for Linux tool execution (port 8000) cannot run inside Lovable - will provide a Python FastAPI script the user runs on their laptop
-- All frontend modules will connect to real Supabase data
-- Role-based route protection enforced client-side + RLS server-side
+## What stays frontend-only (can't run in Lovable):
+- Desktop Electron app, Mobile React Native app, Voice assistant (VOSK/Coqui)
+- These require separate repos — I'll note how to set them up
+
+## Not changing:
+- Auth system (already working)
+- Role-based access (already working)
+- Database schema (already set up)
