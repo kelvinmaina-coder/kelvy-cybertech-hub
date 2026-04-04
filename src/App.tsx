@@ -7,7 +7,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayout";
+import LandingPage from "@/pages/LandingPage";
 import AuthPage from "@/pages/AuthPage";
+import ResetPassword from "@/pages/ResetPassword";
 import Dashboard from "@/pages/Dashboard";
 import SecurityHub from "@/pages/SecurityHub";
 import AIAssistant from "@/pages/AIAssistant";
@@ -21,6 +23,8 @@ import IDE from "@/pages/IDE";
 import Automation from "@/pages/Automation";
 import ClientPortal from "@/pages/ClientPortal";
 import SettingsPage from "@/pages/SettingsPage";
+import Chat from "@/pages/Chat";
+import Notifications from "@/pages/Notifications";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,12 +38,14 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <Routes>
+              <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
-              <Route path="*" element={
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/*" element={
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Routes>
-                      <Route path="/" element={
+                      <Route path="/dashboard" element={
                         <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client", "guest"]}>
                           <Dashboard />
                         </ProtectedRoute>
@@ -97,6 +103,16 @@ const App = () => (
                       <Route path="/portal" element={
                         <ProtectedRoute allowedRoles={["super_admin", "manager", "client"]}>
                           <ClientPortal />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/chat" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
+                          <Chat />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/notifications" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
+                          <Notifications />
                         </ProtectedRoute>
                       } />
                       <Route path="/settings" element={

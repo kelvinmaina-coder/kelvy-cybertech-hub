@@ -17,7 +17,7 @@ export default function AuthPage() {
     );
   }
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 cyber-grid">
@@ -52,6 +52,9 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +63,40 @@ function LoginForm() {
     if (error) toast.error(error);
     setLoading(false);
   };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) { toast.error("Enter your email"); return; }
+    setResetLoading(true);
+    const { error } = await (await import("@/integrations/supabase/client")).supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Password reset link sent! Check your email.");
+    setResetLoading(false);
+    setShowForgot(false);
+  };
+
+  if (showForgot) {
+    return (
+      <form onSubmit={handleForgotPassword} className="space-y-4">
+        <p className="text-xs text-muted-foreground font-mono text-center">Enter your email to receive a password reset link</p>
+        <div>
+          <label className="text-xs text-muted-foreground font-mono mb-1 block">EMAIL</label>
+          <input type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)} required
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono" placeholder="you@example.com" />
+        </div>
+        <button type="submit" disabled={resetLoading}
+          className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2">
+          {resetLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+          {resetLoading ? "SENDING..." : "SEND RESET LINK"}
+        </button>
+        <button type="button" onClick={() => setShowForgot(false)} className="w-full text-xs text-muted-foreground hover:text-primary font-mono transition">
+          ← Back to Sign In
+        </button>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -77,6 +114,11 @@ function LoginForm() {
             {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
+      </div>
+      <div className="text-right">
+        <button type="button" onClick={() => setShowForgot(true)} className="text-[10px] text-muted-foreground hover:text-primary font-mono transition">
+          Forgot Password?
+        </button>
       </div>
       <button type="submit" disabled={loading}
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2">
