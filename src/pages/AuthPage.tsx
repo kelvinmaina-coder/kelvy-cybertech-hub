@@ -17,7 +17,7 @@ export default function AuthPage() {
     );
   }
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 cyber-grid">
