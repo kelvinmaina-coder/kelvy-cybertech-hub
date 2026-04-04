@@ -3,11 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Shield, Bot, Users, Briefcase, Ticket,
   BarChart3, Network, Code, Settings, Terminal, ChevronLeft,
-  ChevronRight, Zap, Globe, Menu, LogOut
+  ChevronRight, Zap, Globe, Menu, LogOut, MessageSquare, Bell
 } from "lucide-react";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
+import NotificationBell from "@/components/NotificationBell";
 import kelvyLogo from "@/assets/kelvy-logo.png";
 
 interface NavItem {
@@ -18,10 +19,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
   { icon: Shield, label: "Security Hub", path: "/security", roles: ["super_admin", "security_analyst"] },
   { icon: Bot, label: "AI Assistant", path: "/ai", roles: ["super_admin", "manager", "security_analyst", "technician"] },
   { icon: Terminal, label: "Linux Tools", path: "/tools", roles: ["super_admin", "security_analyst", "technician"] },
+  { icon: MessageSquare, label: "Chat", path: "/chat", roles: ["super_admin", "manager", "security_analyst", "technician", "client"] },
   { icon: Users, label: "CRM", path: "/crm", roles: ["super_admin", "manager"] },
   { icon: Briefcase, label: "ERP", path: "/erp", roles: ["super_admin", "manager"] },
   { icon: Ticket, label: "ITSM", path: "/itsm", roles: ["super_admin", "manager", "technician"] },
@@ -110,7 +112,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <button className="lg:hidden text-muted-foreground" onClick={() => setMobileOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-3 ml-auto">
+            <NotificationBell />
             <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
             <span className="text-xs text-muted-foreground font-mono">SYSTEM ONLINE</span>
           </div>
