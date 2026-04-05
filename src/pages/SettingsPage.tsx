@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Users, Shield, UserCheck, UserX, Trash2, Search, Loader2, LogOut } from "lucide-react";
+import { Settings, Users, Shield, UserCheck, UserX, Search, Loader2, LogOut, Send, Bell } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -16,12 +16,13 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
-  const { user, hasRole, signOut } = useAuth();
+  const { user, profile, hasRole, signOut } = useAuth();
   const isSuperAdmin = hasRole("super_admin");
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"pending" | "all">("pending");
+  const [tab, setTab] = useState<"pending" | "all" | "broadcast" | "profile">("pending");
+  const [broadcastForm, setBroadcastForm] = useState({ title: "", message: "", priority: "normal", target_roles: "" });
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -31,10 +32,7 @@ export default function SettingsPage() {
     const enriched: UserProfile[] = [];
     for (const p of profiles) {
       const { data: rolesData } = await supabase.from("user_roles").select("role").eq("user_id", p.id);
-      enriched.push({
-        ...p,
-        roles: (rolesData || []).map((r: any) => r.role as AppRole),
-      });
+      enriched.push({ ...p, roles: (rolesData || []).map((r: any) => r.role as AppRole) });
     }
     setUsers(enriched);
     setLoading(false);
@@ -42,16 +40,30 @@ export default function SettingsPage() {
 
   useEffect(() => { if (isSuperAdmin) fetchUsers(); else setLoading(false); }, [isSuperAdmin]);
 
-  const approveUser = async (userId: string) => {
+  const approveUser = async (userId: string, role: AppRole = "client") => {
     await supabase.from("profiles").update({ approved: true } as any).eq("id", userId);
-    toast.success("User approved");
+    await supabase.from("user_roles").delete().eq("user_id", userId);
+    await supabase.from("user_roles").insert({ user_id: userId, role } as any);
+    // Send notification to user
+    await supabase.from("notifications").insert({
+      user_id: userId,
+      type: "approval",
+      title: "Account Approved",
+      message: `Your account has been approved with role: ${role}. Welcome to Kelvy CyberTech Hub!`,
+    } as any);
+    toast.success(`User approved as ${role}`);
     fetchUsers();
   };
 
   const changeRole = async (userId: string, newRole: AppRole) => {
-    // Delete existing roles, add new one
     await supabase.from("user_roles").delete().eq("user_id", userId);
     await supabase.from("user_roles").insert({ user_id: userId, role: newRole } as any);
+    await supabase.from("notifications").insert({
+      user_id: userId,
+      type: "role",
+      title: "Role Updated",
+      message: `Your role has been changed to ${newRole}.`,
+    } as any);
     toast.success(`Role changed to ${newRole}`);
     fetchUsers();
   };
@@ -60,6 +72,21 @@ export default function SettingsPage() {
     await supabase.from("profiles").update({ approved } as any).eq("id", userId);
     toast.success(approved ? "User activated" : "User suspended");
     fetchUsers();
+  };
+
+  const sendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetRoles = broadcastForm.target_roles ? broadcastForm.target_roles.split(",").map(r => r.trim()) : null;
+    const { error } = await supabase.from("broadcast_notices").insert({
+      title: broadcastForm.title,
+      message: broadcastForm.message,
+      priority: broadcastForm.priority,
+      target_roles: targetRoles,
+      created_by: user?.id,
+    } as any);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Broadcast sent!");
+    setBroadcastForm({ title: "", message: "", priority: "normal", target_roles: "" });
   };
 
   const pendingUsers = users.filter(u => !u.approved && u.id !== user?.id);
@@ -74,7 +101,11 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-display font-bold text-foreground">SETTINGS</h1>
         <div className="rounded-lg border border-border bg-card p-6">
           <h3 className="font-display text-sm text-primary mb-4">MY PROFILE</h3>
-          <p className="text-sm text-muted-foreground">Contact the super admin to modify your account settings.</p>
+          <div className="space-y-2 text-sm">
+            <p><span className="text-muted-foreground font-mono">Name:</span> <span className="text-foreground">{profile?.full_name || "—"}</span></p>
+            <p><span className="text-muted-foreground font-mono">Phone:</span> <span className="text-foreground">{profile?.phone || "—"}</span></p>
+            <p><span className="text-muted-foreground font-mono">Company:</span> <span className="text-foreground">{profile?.company || "—"}</span></p>
+          </div>
           <button onClick={signOut} className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/20 text-destructive text-sm font-mono hover:bg-destructive/30 transition">
             <LogOut className="w-4 h-4" /> Sign Out
           </button>
@@ -87,21 +118,20 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">SETTINGS</h1>
-          <p className="text-sm text-muted-foreground font-mono">Super Admin • User Management & System Config</p>
+          <h1 className="text-2xl font-display font-bold text-foreground">SYSTEM SETTINGS</h1>
+          <p className="text-sm text-muted-foreground font-mono">Super Admin • User Management & Broadcasts</p>
         </div>
         <button onClick={signOut} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/20 text-destructive text-xs font-mono hover:bg-destructive/30 transition">
           <LogOut className="w-3 h-3" /> Sign Out
         </button>
       </div>
 
-      <div className="flex gap-2 mb-4">
-        <button onClick={() => setTab("pending")} className={`px-4 py-2 rounded-lg text-xs font-mono transition ${tab === "pending" ? "bg-primary/20 text-primary" : "bg-card border border-border text-muted-foreground"}`}>
-          PENDING APPROVALS {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[10px]">{pendingUsers.length}</span>}
-        </button>
-        <button onClick={() => setTab("all")} className={`px-4 py-2 rounded-lg text-xs font-mono transition ${tab === "all" ? "bg-primary/20 text-primary" : "bg-card border border-border text-muted-foreground"}`}>
-          ALL USERS ({users.length})
-        </button>
+      <div className="flex flex-wrap gap-2 mb-4">
+        {(["pending", "all", "broadcast"] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`px-4 py-2 rounded-lg text-xs font-mono transition ${tab === t ? "bg-primary/20 text-primary" : "bg-card border border-border text-muted-foreground"}`}>
+            {t === "pending" ? `PENDING (${pendingUsers.length})` : t === "all" ? `ALL USERS (${users.length})` : "BROADCAST"}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -117,15 +147,17 @@ export default function SettingsPage() {
                 <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border">
                   <div>
                     <p className="text-sm text-foreground font-medium">{u.full_name || "No name"}</p>
-                    <p className="text-xs text-muted-foreground font-mono">{u.phone} • {u.company || "No company"} • Registered {new Date(u.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{u.phone || "No phone"} • {u.company || "No company"} • {new Date(u.created_at).toLocaleDateString()}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select onChange={e => { approveUser(u.id); changeRole(u.id, e.target.value as AppRole); }}
+                    <select onChange={e => approveUser(u.id, e.target.value as AppRole)} defaultValue=""
                       className="bg-background border border-border rounded px-2 py-1 text-xs text-foreground font-mono">
-                      <option value="client">Approve as Client</option>
-                      <option value="manager">Approve as Manager</option>
-                      <option value="security_analyst">Approve as Security Analyst</option>
-                      <option value="technician">Approve as Technician</option>
+                      <option value="" disabled>Approve as...</option>
+                      <option value="client">Client</option>
+                      <option value="manager">Manager</option>
+                      <option value="security_analyst">Security Analyst</option>
+                      <option value="technician">Technician</option>
+                      <option value="guest">Guest</option>
                     </select>
                   </div>
                 </div>
@@ -133,7 +165,7 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
-      ) : (
+      ) : tab === "all" ? (
         <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="relative flex-1">
@@ -158,7 +190,6 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-2">
                     <select value={u.roles[0] || "client"} onChange={e => changeRole(u.id, e.target.value as AppRole)}
                       className="bg-background border border-border rounded px-2 py-1 text-xs text-foreground font-mono">
-                      <option value="super_admin">Super Admin</option>
                       <option value="manager">Manager</option>
                       <option value="security_analyst">Security Analyst</option>
                       <option value="technician">Technician</option>
@@ -175,6 +206,30 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h3 className="font-display text-sm text-primary mb-3 flex items-center gap-2"><Bell className="w-4 h-4" /> SEND BROADCAST NOTICE</h3>
+          <form onSubmit={sendBroadcast} className="space-y-3">
+            <input value={broadcastForm.title} onChange={e => setBroadcastForm(p => ({ ...p, title: e.target.value }))} required
+              placeholder="Notice Title *" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono" />
+            <textarea value={broadcastForm.message} onChange={e => setBroadcastForm(p => ({ ...p, message: e.target.value }))} required
+              placeholder="Message content..." className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono min-h-[80px]" />
+            <div className="grid grid-cols-2 gap-3">
+              <select value={broadcastForm.priority} onChange={e => setBroadcastForm(p => ({ ...p, priority: e.target.value }))}
+                className="bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono">
+                <option value="low">Low Priority</option>
+                <option value="normal">Normal</option>
+                <option value="high">High Priority</option>
+                <option value="urgent">Urgent</option>
+              </select>
+              <input value={broadcastForm.target_roles} onChange={e => setBroadcastForm(p => ({ ...p, target_roles: e.target.value }))}
+                placeholder="Target roles (optional, comma-sep)" className="bg-background border border-border rounded-lg px-3 py-2 text-sm font-mono" />
+            </div>
+            <button type="submit" className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-mono text-sm hover:opacity-90 transition">
+              <Send className="w-4 h-4" /> Send Broadcast
+            </button>
+          </form>
         </div>
       )}
     </div>

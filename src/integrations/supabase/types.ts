@@ -77,6 +77,53 @@ export type Database = {
         }
         Relationships: []
       }
+      calls: {
+        Row: {
+          call_type: string | null
+          caller_id: string
+          conversation_id: number | null
+          created_at: string
+          duration_seconds: number | null
+          ended_at: string | null
+          id: number
+          receiver_id: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          call_type?: string | null
+          caller_id: string
+          conversation_id?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: number
+          receiver_id?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          call_type?: string | null
+          caller_id?: string
+          conversation_id?: number | null
+          created_at?: string
+          duration_seconds?: number | null
+          ended_at?: string | null
+          id?: number
+          receiver_id?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_history: {
         Row: {
           content: string | null
@@ -211,6 +258,59 @@ export type Database = {
         }
         Relationships: []
       }
+      deals: {
+        Row: {
+          assigned_to: string | null
+          client_id: number | null
+          close_date: string | null
+          created_at: string
+          created_by: string | null
+          id: number
+          notes: string | null
+          probability: number | null
+          stage: string | null
+          title: string
+          updated_at: string
+          value: number | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          client_id?: number | null
+          close_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          notes?: string | null
+          probability?: number | null
+          stage?: string | null
+          title: string
+          updated_at?: string
+          value?: number | null
+        }
+        Update: {
+          assigned_to?: string | null
+          client_id?: number | null
+          close_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          notes?: string | null
+          probability?: number | null
+          stage?: string | null
+          title?: string
+          updated_at?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dismissed_notices: {
         Row: {
           dismissed_at: string
@@ -236,6 +336,83 @@ export type Database = {
             columns: ["notice_id"]
             isOneToOne: false
             referencedRelation: "broadcast_notices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses: {
+        Row: {
+          amount: number | null
+          approved_by: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expense_date: string | null
+          id: number
+          receipt_url: string | null
+          vendor: string | null
+        }
+        Insert: {
+          amount?: number | null
+          approved_by?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string | null
+          id?: number
+          receipt_url?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          amount?: number | null
+          approved_by?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string | null
+          id?: number
+          receipt_url?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      interactions: {
+        Row: {
+          ai_summary: string | null
+          client_id: number | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: number
+          type: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          client_id?: number | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          type: string
+        }
+        Update: {
+          ai_summary?: string | null
+          client_id?: number | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: number
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -289,6 +466,74 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      meeting_participants: {
+        Row: {
+          id: number
+          joined_at: string | null
+          meeting_id: number | null
+          rsvp_status: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: number
+          joined_at?: string | null
+          meeting_id?: number | null
+          rsvp_status?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: number
+          joined_at?: string | null
+          meeting_id?: number | null
+          rsvp_status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_participants_meeting_id_fkey"
+            columns: ["meeting_id"]
+            isOneToOne: false
+            referencedRelation: "meetings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meetings: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_minutes: number | null
+          host_id: string
+          id: number
+          meeting_link: string | null
+          scheduled_at: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          host_id: string
+          id?: number
+          meeting_link?: string | null
+          scheduled_at: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number | null
+          host_id?: string
+          id?: number
+          meeting_link?: string | null
+          scheduled_at?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
       }
       message_reads: {
         Row: {
@@ -448,6 +693,47 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          created_at: string
+          id: number
+          invoice_id: number | null
+          method: string | null
+          mpesa_ref: string | null
+          notes: string | null
+        }
+        Insert: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: number
+          invoice_id?: number | null
+          method?: string | null
+          mpesa_ref?: string | null
+          notes?: string | null
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string
+          id?: number
+          invoice_id?: number | null
+          method?: string | null
+          mpesa_ref?: string | null
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           approved: boolean
@@ -478,6 +764,83 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          budget: number | null
+          client_id: number | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          description: string | null
+          id: number
+          name: string
+          start_date: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          budget?: number | null
+          client_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: number
+          name: string
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          budget?: number | null
+          client_id?: number | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          description?: string | null
+          id?: number
+          name?: string
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_type: string | null
+          id: number
+          last_used: string | null
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_type?: string | null
+          id?: number
+          last_used?: string | null
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_type?: string | null
+          id?: number
+          last_used?: string | null
+          token?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -546,6 +909,56 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: number
+          priority: string | null
+          project_id: number | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: number
+          priority?: string | null
+          project_id?: number | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: number
+          priority?: string | null
+          project_id?: number | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tickets: {
         Row: {
