@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Shield, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Shield, Eye, EyeOff, Loader2, Chrome } from "lucide-react";
 import { toast } from "sonner";
+import { lovable } from "@/integrations/lovable/index";
 import kelvyLogo from "@/assets/kelvy-logo.png";
 
 export default function AuthPage() {
@@ -40,9 +41,44 @@ export default function AuthPage() {
           </div>
 
           {tab === "login" ? <LoginForm /> : <RegisterForm />}
+
+          <div className="mt-4 pt-4 border-t border-border">
+            <GoogleSignInButton />
+          </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function GoogleSignInButton() {
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error("Google sign-in failed");
+        setLoading(false);
+        return;
+      }
+      if (result.redirected) return;
+      // Session set automatically
+    } catch (e) {
+      toast.error("Google sign-in error");
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button onClick={handleGoogleSignIn} disabled={loading}
+      className="w-full py-2.5 rounded-lg border border-border bg-background text-foreground font-mono text-sm hover:bg-muted/30 transition disabled:opacity-50 flex items-center justify-center gap-2">
+      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Chrome className="w-4 h-4" />}
+      {loading ? "CONNECTING..." : "SIGN IN WITH GOOGLE"}
+    </button>
   );
 }
 
