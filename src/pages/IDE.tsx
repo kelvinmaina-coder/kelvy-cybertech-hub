@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Code, Play, Save, GitBranch, Terminal, FileCode, Bot, Loader2 } from "lucide-react";
+import { Code, Play, Save, GitBranch, Terminal, FileCode, Bot, Loader2, Bug, BookOpen, Zap } from "lucide-react";
 import { streamOllamaChat, listOllamaModels, OllamaMessage } from "@/lib/ollama";
 
 const defaultFiles: Record<string, string> = {
@@ -56,29 +56,37 @@ security:
   whitelist_enabled: true`,
 };
 
+const AI_ACTIONS = [
+  { id: "explain", label: "Explain", icon: Code, prompt: "Explain this code line by line. What does it do?" },
+  { id: "bugs", label: "Find Bugs", icon: Bug, prompt: "Find all bugs, security vulnerabilities, and issues in this code. Rate each issue by severity." },
+  { id: "optimize", label: "Optimize", icon: Zap, prompt: "Suggest performance optimizations and best practices for this code." },
+  { id: "docs", label: "Gen Docs", icon: BookOpen, prompt: "Generate comprehensive documentation, docstrings, and inline comments for this code." },
+];
+
 export default function IDE() {
   const [activeFile, setActiveFile] = useState("scanner.py");
   const [files, setFiles] = useState(defaultFiles);
   const [aiOutput, setAiOutput] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [terminalOutput, setTerminalOutput] = useState("$ Ready for input...");
+  const [aiAction, setAiAction] = useState("");
+  const [terminalOutput, setTerminalOutput] = useState("$ Ready for input...\n\nTip: Start your Python backend with:\n  cd backend && python main.py");
 
-  const analyzeCode = useCallback(async () => {
+  const analyzeCode = useCallback(async (action: typeof AI_ACTIONS[number]) => {
     const code = files[activeFile];
     if (!code || aiLoading) return;
     setAiLoading(true);
-    setAiOutput("Analyzing code with Ollama...\n");
+    setAiAction(action.label);
+    setAiOutput(`🔍 ${action.label}: Analyzing "${activeFile}"...\n\n`);
 
     const messages: OllamaMessage[] = [{
       role: "user",
-      content: `Review this code file "${activeFile}" for bugs, security issues, and improvements:\n\n\`\`\`\n${code}\n\`\`\`\n\nProvide:\n1. Security vulnerabilities\n2. Bug risks\n3. Performance suggestions\n4. Best practices`
+      content: `${action.prompt}\n\nFile: "${activeFile}"\n\n\`\`\`\n${code}\n\`\`\``,
     }];
 
     let result = "";
     await streamOllamaChat({
-      messages,
-      model: "qwen2.5:7b",
-      systemPrompt: "You are a senior security-focused code reviewer. Be concise and actionable.",
+      messages, model: "qwen2.5:7b",
+      systemPrompt: "You are a senior security-focused code reviewer. Be concise, use markdown formatting, and provide actionable feedback.",
       onDelta: (chunk) => { result += chunk; setAiOutput(result); },
       onDone: () => setAiLoading(false),
       onError: (err) => { setAiOutput(`Error: ${err}`); setAiLoading(false); },
@@ -96,11 +104,15 @@ export default function IDE() {
           <h1 className="text-2xl font-display font-bold text-accent">CLOUD IDE</h1>
           <p className="text-sm text-muted-foreground font-mono">Browser-Based Development • AI Code Review</p>
         </div>
-        <button onClick={analyzeCode} disabled={aiLoading}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent/20 text-accent text-xs font-mono hover:bg-accent/30 transition disabled:opacity-50">
-          {aiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Bot className="w-3 h-3" />}
-          AI Review
-        </button>
+        <div className="flex gap-1">
+          {AI_ACTIONS.map(action => (
+            <button key={action.id} onClick={() => analyzeCode(action)} disabled={aiLoading}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg bg-accent/10 text-accent text-[10px] font-mono hover:bg-accent/20 transition disabled:opacity-50"
+              title={action.prompt}>
+              <action.icon className="w-3 h-3" /> {action.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex-1 flex flex-col rounded-lg border border-border bg-card overflow-hidden">
@@ -139,7 +151,7 @@ export default function IDE() {
           {aiOutput && (
             <div className="w-80 border-l border-border bg-background p-3 overflow-y-auto">
               <div className="flex items-center gap-1 mb-2 text-xs text-accent font-mono">
-                <Bot className="w-3 h-3" /> AI Review
+                <Bot className="w-3 h-3" /> AI: {aiAction || "Review"}
                 {aiLoading && <Loader2 className="w-3 h-3 animate-spin ml-auto" />}
               </div>
               <pre className="text-xs text-foreground/80 whitespace-pre-wrap font-mono">{aiOutput}</pre>
@@ -151,7 +163,7 @@ export default function IDE() {
           <div className="flex items-center gap-1 mb-1 text-muted-foreground">
             <Terminal className="w-3 h-3" /> Terminal
           </div>
-          <div className="whitespace-pre-wrap">{terminalOutput}</div>
+          <div className="whitespace-pre-wrap">{terminalOutput}<span className="terminal-cursor" /></div>
         </div>
       </div>
     </div>
