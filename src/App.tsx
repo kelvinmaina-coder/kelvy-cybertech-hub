@@ -25,6 +25,8 @@ import ClientPortal from "@/pages/ClientPortal";
 import SettingsPage from "@/pages/SettingsPage";
 import Chat from "@/pages/Chat";
 import Notifications from "@/pages/Notifications";
+import Calls from "@/pages/Calls";
+import Meetings from "@/pages/Meetings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -113,6 +115,16 @@ const App = () => (
                       <Route path="/notifications" element={
                         <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
                           <Notifications />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/calls" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
+                          <Calls />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/meetings" element={
+                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
+                          <Meetings />
                         </ProtectedRoute>
                       } />
                       <Route path="/settings" element={
