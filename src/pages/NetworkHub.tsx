@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Network, Wifi, Monitor, AlertTriangle, Globe, RefreshCw, Loader2 } from "lucide-react";
+import { Network, Wifi, Monitor, AlertTriangle, Globe, RefreshCw, Loader2, ShieldAlert } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 
 const BACKEND_URL = "http://localhost:8000";
@@ -11,7 +11,11 @@ interface Device {
   status: string;
   os: string;
   mac?: string;
+  firstSeen?: string;
+  lastSeen?: string;
 }
+
+const knownDevices = new Set(["192.168.1.1", "192.168.1.10", "192.168.1.11", "192.168.1.50", "192.168.1.30"]);
 
 const defaultDevices: Device[] = [
   { name: "Main Server", ip: "192.168.1.1", type: "Server", status: "online", os: "Parrot OS" },
@@ -26,6 +30,7 @@ const statusColors: Record<string, string> = {
   online: "text-primary bg-primary/10",
   offline: "text-muted-foreground bg-muted/30",
   suspicious: "text-destructive bg-destructive/10 animate-pulse",
+  rogue: "text-destructive bg-destructive/20 animate-pulse",
 };
 
 export default function NetworkHub() {
@@ -43,28 +48,64 @@ export default function NetworkHub() {
       const res = await fetch(`${BACKEND_URL}/api/security/run-tool`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tool: "arp-scan", args: ["--localnet"], target: "" }),
+        body: JSON.stringify({ tool: "nmap", args: ["-sn", "192.168.1.0/24"], target: "192.168.1.0/24" }),
       });
       if (res.ok) {
         const data = await res.json();
-        // Parse arp-scan output to extract devices
         const lines = (data.raw_output || "").split("\n");
-        const discovered: Device[] = lines
-          .filter((l: string) => /\d+\.\d+\.\d+\.\d+/.test(l))
-          .map((l: string) => {
-            const parts = l.trim().split(/\s+/);
-            return { ip: parts[0], mac: parts[1], name: parts.slice(2).join(" ") || "Unknown", type: "Discovered", status: "online", os: "Unknown" };
-          });
+        const discovered: Device[] = [];
+        let currentHost = "";
+        lines.forEach((line: string) => {
+          const hostMatch = line.match(/Nmap scan report for (.+)/);
+          if (hostMatch) currentHost = hostMatch[1];
+          const ipMatch = currentHost.match(/(\d+\.\d+\.\d+\.\d+)/);
+          if (ipMatch && line.includes("Host is up")) {
+            const ip = ipMatch[1];
+            const isKnown = knownDevices.has(ip);
+            discovered.push({
+              ip, name: currentHost.replace(/\s*\(.+\)/, "") || "Unknown",
+              type: isKnown ? "Known" : "Unknown", mac: "",
+              status: isKnown ? "online" : "rogue", os: "Detected",
+              lastSeen: new Date().toISOString(),
+            });
+          }
+        });
         if (discovered.length > 0) setDevices(discovered);
-      }
+      } else throw new Error("Backend error");
     } catch {
-      // Keep default devices if backend is offline
+      // Try arp-scan fallback
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/security/run-tool`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tool: "arp-scan", args: ["--localnet"], target: "" }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const lines = (data.raw_output || "").split("\n");
+          const discovered: Device[] = lines
+            .filter((l: string) => /\d+\.\d+\.\d+\.\d+/.test(l))
+            .map((l: string) => {
+              const parts = l.trim().split(/\s+/);
+              const ip = parts[0];
+              return {
+                ip, mac: parts[1], name: parts.slice(2).join(" ") || "Unknown",
+                type: knownDevices.has(ip) ? "Known" : "Unknown",
+                status: knownDevices.has(ip) ? "online" : "rogue", os: "Unknown",
+              };
+            });
+          if (discovered.length > 0) setDevices(discovered);
+        }
+      } catch {
+        // Keep defaults
+      }
     }
     setScanning(false);
   };
 
   const onlineCount = devices.filter(d => d.status === "online").length;
-  const suspiciousCount = devices.filter(d => d.status === "suspicious").length;
+  const suspiciousCount = devices.filter(d => d.status === "suspicious" || d.status === "rogue").length;
+  const healthScore = devices.length > 0 ? Math.round(((onlineCount / devices.length) * 80) + (suspiciousCount === 0 ? 20 : 0)) : 0;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -81,7 +122,7 @@ export default function NetworkHub() {
           <button onClick={discoverDevices} disabled={scanning}
             className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary/20 text-secondary text-xs font-mono hover:bg-secondary/30 transition disabled:opacity-50">
             {scanning ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-            Discover
+            Scan Network
           </button>
         </div>
       </div>
@@ -89,25 +130,57 @@ export default function NetworkHub() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard icon={Monitor} title="Total Devices" value={String(devices.length)} variant="cyan" />
         <MetricCard icon={Wifi} title="Online" value={String(onlineCount)} variant="green" />
-        <MetricCard icon={Globe} title="Uptime" value="99.9%" variant="green" />
-        <MetricCard icon={AlertTriangle} title="Suspicious" value={String(suspiciousCount)} variant="red" />
+        <MetricCard icon={Globe} title="Health Score" value={`${healthScore}%`} variant={healthScore > 80 ? "green" : "orange"} />
+        <MetricCard icon={ShieldAlert} title="Rogue/Suspicious" value={String(suspiciousCount)} variant="red" />
       </div>
 
       <div className="rounded-lg border border-border bg-card p-4">
         <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">NETWORK DEVICES</h3>
-        <div className="space-y-1">
-          {devices.map((d, i) => (
-            <div key={i} className="flex items-center gap-3 p-2 rounded bg-muted/20 text-sm animate-slide-in" style={{ animationDelay: `${i * 50}ms` }}>
-              <span className={`w-2 h-2 rounded-full shrink-0 ${d.status === "online" ? "bg-primary" : d.status === "suspicious" ? "bg-destructive animate-pulse" : "bg-muted-foreground"}`} />
-              <span className="text-foreground flex-1 font-medium">{d.name}</span>
-              <span className="text-muted-foreground font-mono text-xs">{d.ip}</span>
-              {d.mac && <span className="text-muted-foreground font-mono text-[10px] hidden md:block">{d.mac}</span>}
-              <span className="text-xs text-muted-foreground hidden sm:block">{d.os}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono ${statusColors[d.status]}`}>{d.status}</span>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-muted-foreground font-mono border-b border-border">
+                <th className="text-left py-2 pr-3">Status</th>
+                <th className="text-left py-2 pr-3">Name</th>
+                <th className="text-left py-2 pr-3">IP Address</th>
+                <th className="text-left py-2 pr-3 hidden md:table-cell">MAC</th>
+                <th className="text-left py-2 pr-3 hidden sm:table-cell">OS</th>
+                <th className="text-left py-2">Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {devices.map((d, i) => (
+                <tr key={i} className={`border-b border-border/30 animate-slide-in ${d.status === "rogue" || d.status === "suspicious" ? "bg-destructive/5" : "hover:bg-muted/20"}`}
+                  style={{ animationDelay: `${i * 50}ms` }}>
+                  <td className="py-2 pr-3">
+                    <span className={`inline-flex items-center gap-1.5 text-[10px] px-1.5 py-0.5 rounded font-mono ${statusColors[d.status]}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${d.status === "online" ? "bg-primary" : d.status === "rogue" || d.status === "suspicious" ? "bg-destructive" : "bg-muted-foreground"}`} />
+                      {d.status}
+                    </span>
+                  </td>
+                  <td className="py-2 pr-3 text-foreground font-medium">{d.name}</td>
+                  <td className="py-2 pr-3 text-muted-foreground font-mono text-xs">{d.ip}</td>
+                  <td className="py-2 pr-3 text-muted-foreground font-mono text-[10px] hidden md:table-cell">{d.mac || "—"}</td>
+                  <td className="py-2 pr-3 text-muted-foreground text-xs hidden sm:table-cell">{d.os}</td>
+                  <td className="py-2 text-xs text-muted-foreground">{d.type}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
+
+      {suspiciousCount > 0 && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 animate-border-glow">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertTriangle className="w-4 h-4 text-destructive" />
+            <h3 className="font-display text-sm text-destructive">ROGUE DEVICE ALERT</h3>
+          </div>
+          <p className="text-sm text-foreground font-mono">
+            {suspiciousCount} unknown/rogue device(s) detected on the network. Investigate immediately.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
