@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+﻿import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { MessageSquare, Send, Users, Plus, Search, Hash, User, Loader2 } from "lucide-react";
@@ -268,7 +268,7 @@ export default function Chat() {
                       <p className="text-sm text-foreground whitespace-pre-wrap">{msg.is_deleted ? <i className="text-muted-foreground">Message deleted</i> : msg.content}</p>
                       <p className="text-[9px] text-muted-foreground mt-1 text-right">
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        {msg.is_edited && " • edited"}
+                        {msg.is_edited && " â€¢ edited"}
                       </p>
                     </div>
                   </div>
@@ -302,3 +302,4 @@ export default function Chat() {
     </div>
   );
 }
+

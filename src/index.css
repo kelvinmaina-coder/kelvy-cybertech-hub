@@ -114,19 +114,6 @@
     --sidebar-border: 20 20% 15%;
     --sidebar-ring: 25 95% 55%;
     --glow-green: 0 0 20px hsla(25, 95%, 55%, 0.3);
-    --glow-cyan: 0 0 20px hsla(45, 90%, 55%, 0.3);
-    --glow-red: 0 0 20px hsla(0, 80%, 55%, 0.3);
-    --glow-purple: 0 0 20px hsla(350, 70%, 55%, 0.3);
-  }
-
-  /* Forest / Midnight */
-  [data-theme="forest"] {
-    --background: 160 35% 5%;
-    --foreground: 150 20% 90%;
-    --card: 160 30% 9%;
-    --card-foreground: 150 20% 90%;
-    --popover: 160 30% 9%;
-    --popover-foreground: 150 20% 90%;
     --primary: 140 70% 45%;
     --primary-foreground: 160 35% 5%;
     --secondary: 170 60% 50%;
@@ -390,3 +377,44 @@
 .animate-float { animation: float 3s ease-in-out infinite; }
 .animate-fade-in { animation: fade-in 0.3s ease-out; }
 .animate-slide-in { animation: slide-in 0.3s ease-out; }
+/* Purple Theme */
+.purple {
+  --background: 270 50% 98%;
+  --foreground: 270 50% 10%;
+  --card: 270 50% 100%;
+  --card-foreground: 270 50% 10%;
+  --primary: 270 100% 50%;
+  --primary-foreground: 270 50% 98%;
+  --accent: 270 100% 60%;
+  --accent-foreground: 270 50% 98%;
+  --border: 270 30% 85%;
+}
+
+.dark.purple {
+  --background: 270 50% 8%;
+  --foreground: 270 30% 90%;
+  --card: 270 50% 12%;
+  --card-foreground: 270 30% 90%;
+  --primary: 270 100% 55%;
+  --primary-foreground: 270 30% 98%;
+  --accent: 270 100% 65%;
+  --accent-foreground: 270 30% 98%;
+  --border: 270 40% 25%;
+}
+
+/* Cyber Theme */
+.cyber {
+  --background: 180 50% 5%;
+  --foreground: 180 20% 90%;
+  --card: 180 40% 8%;
+  --card-foreground: 180 20% 90%;
+  --primary: 175 100% 50%;
+  --primary-foreground: 180 50% 5%;
+  --accent: 280 100% 60%;
+  --accent-foreground: 180 50% 5%;
+  --border: 175 50% 30%;
+}
+
+.cyber .glow-purple {
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}

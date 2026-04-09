@@ -27,7 +27,7 @@ class ChatRequest(BaseModel):
 
 @router.post("/chat")
 async def chat(req: ChatRequest):
-    """Chat with Ollama — streaming response."""
+    """Chat with qwen2.5:7b — streaming response."""
     try:
         stream = gw.chat_stream(req.messages, req.model or "qwen2.5:7b", req.system_prompt)
         return StreamingResponse(stream, media_type="text/event-stream")
@@ -35,16 +35,47 @@ async def chat(req: ChatRequest):
         raise HTTPException(500, str(e))
 
 
-class AnalyzeRequest(BaseModel):
+class VisionRequest(BaseModel):
+    prompt: str
+    image: str  # Base64
+    model: Optional[str] = "qwen3-vl:8b"
+
+
+@router.post("/vision")
+async def vision(req: VisionRequest):
+    """Analyze image with qwen3-vl:8b."""
+    try:
+        result = await gw.vision(req.prompt, req.image, req.model or "qwen3-vl:8b")
+        return {"response": result}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+class EmbedRequest(BaseModel):
+    text: str
+    model: Optional[str] = "nomic-embed-text"
+
+
+@router.post("/embed")
+async def embed(req: EmbedRequest):
+    """Generate embeddings with nomic-embed-text."""
+    try:
+        result = await gw.embed(req.text, req.model or "nomic-embed-text")
+        return {"embedding": result}
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+class AnalyzeSecurityRequest(BaseModel):
     tool: str
     output: str
 
 
-@router.post("/analyze")
-async def analyze(req: AnalyzeRequest):
-    """Analyze security tool output with AI."""
+@router.post("/analyze-security")
+async def analyze_security(req: AnalyzeSecurityRequest):
+    """Deep security analysis using qwen2.5:7b."""
     try:
-        result = await gw.analyze_output(req.tool, req.output)
+        result = await gw.analyze_security(req.tool, req.output)
         return result
     except Exception as e:
         raise HTTPException(500, str(e))

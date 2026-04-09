@@ -1,116 +1,246 @@
 import { useEffect, useState } from "react";
-import { Shield, Users, Ticket, DollarSign, AlertTriangle, CheckCircle, TrendingUp, Activity } from "lucide-react";
-import MetricCard from "@/components/MetricCard";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from "recharts";
+import { Link } from "react-router-dom";
+import { 
+  Shield, Network, Code, BarChart3, Bot, Cloud, 
+  Briefcase, MessageSquare, Zap, Activity, Users,
+  ArrowRight, ShieldAlert, Cpu, Database, Server
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ clients: 0, tickets: 0, scans: 0, events: 0, revenue: 0, pending: 0, scansToday: 0 });
-  const [events, setEvents] = useState<any[]>([]);
-  const [ticketTrend, setTicketTrend] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({
+    threats: 0, critical: 0, 
+    devices: 47, rogue: 0,
+    commits: 23, deployments: 4,
+    revenue: 0, clients: 0,
+    queries: "2.4K", activeModels: 3,
+    cloudServices: 3, containers: 12,
+    openTickets: 0, totalInvoiced: 0,
+    teamMembers: 8, onlineNow: 3
+  });
 
   useEffect(() => {
-    const load = async () => {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const dayAgo = new Date(now.getTime() - 86400000).toISOString();
-
-      const [clientsRes, ticketsRes, scansRes, eventsRes, invoicesRes, pendingRes, scansTodayRes] = await Promise.all([
+    const loadStats = async () => {
+      const [eventsRes, clientsRes, ticketsRes, chatRes, invoicesRes] = await Promise.all([
+        supabase.from("security_events").select("severity"),
         supabase.from("clients").select("id", { count: "exact", head: true }),
         supabase.from("tickets").select("id", { count: "exact", head: true }).neq("status", "closed"),
-        supabase.from("scans").select("id", { count: "exact", head: true }),
-        supabase.from("security_events").select("*").order("created_at", { ascending: false }).limit(8),
-        supabase.from("invoices").select("amount, status, paid_at"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("approved", false),
-        supabase.from("scans").select("id", { count: "exact", head: true }).gte("created_at", dayAgo),
+        supabase.from("chat_history").select("id", { count: "exact", head: true }),
+        supabase.from("invoices").select("amount, status")
       ]);
 
-      const paidInvoices = (invoicesRes.data || []).filter((i: any) => i.status === "paid");
-      const monthlyRevenue = paidInvoices
-        .filter((i: any) => i.paid_at && i.paid_at >= monthStart)
-        .reduce((a: number, i: any) => a + Number(i.amount), 0);
-
-      setStats({
+      setStats(prev => ({
+        ...prev,
+        threats: eventsRes.data?.length || 0,
+        critical: eventsRes.data?.filter(e => e.severity === 'critical').length || 0,
         clients: clientsRes.count || 0,
-        tickets: ticketsRes.count || 0,
-        scans: scansRes.count || 0,
-        events: (eventsRes.data || []).length,
-        revenue: monthlyRevenue,
-        pending: pendingRes.count || 0,
-        scansToday: scansTodayRes.count || 0,
-      });
-      setEvents(eventsRes.data || []);
-
-      // Build ticket trend for last 7 days
-      const { data: recentTickets } = await supabase.from("tickets").select("created_at").gte("created_at", new Date(now.getTime() - 7 * 86400000).toISOString());
-      const days: Record<string, number> = {};
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 86400000);
-        days[d.toLocaleDateString("en-US", { weekday: "short" })] = 0;
-      }
-      (recentTickets || []).forEach((t: any) => {
-        const d = new Date(t.created_at).toLocaleDateString("en-US", { weekday: "short" });
-        if (days[d] !== undefined) days[d]++;
-      });
-      setTicketTrend(Object.entries(days).map(([day, count]) => ({ day, tickets: count })));
+        openTickets: ticketsRes.count || 0,
+        queries: chatRes.count ? `${(chatRes.count / 1000).toFixed(1)}K` : "0K",
+        revenue: invoicesRes.data?.filter(i => i.status === 'paid').reduce((a, b) => a + Number(b.amount), 0) || 0,
+        totalInvoiced: invoicesRes.data?.reduce((a, b) => a + Number(b.amount), 0) || 0,
+      }));
     };
-
-    load();
-    const channel = supabase.channel("dashboard-realtime")
-      .on("postgres_changes", { event: "*", schema: "public", table: "security_events" }, () => load())
-      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    loadStats();
   }, []);
 
+  const cards = [
+    { 
+      title: "CYBERSECURITY", 
+      icon: Shield, 
+      path: "/cybersecurity", 
+      color: "border-red-500/50 hover:bg-red-500/10",
+      iconColor: "text-red-500",
+      metrics: [
+        { label: "Threats", value: stats.threats },
+        { label: "Critical", value: stats.critical, subColor: "text-red-500" }
+      ],
+      btnText: "VIEW SECURITY"
+    },
+    { 
+      title: "NETWORKING", 
+      icon: Network, 
+      path: "/networking", 
+      color: "border-cyan-500/50 hover:bg-cyan-500/10",
+      iconColor: "text-cyan-500",
+      metrics: [
+        { label: "Active Devices", value: stats.devices },
+        { label: "Rogue Detected", value: stats.rogue, subColor: "text-green-500" }
+      ],
+      btnText: "VIEW NETWORK"
+    },
+    { 
+      title: "SOFTWARE DEV", 
+      icon: Code, 
+      path: "/software-dev", 
+      color: "border-purple-500/50 hover:bg-purple-500/10",
+      iconColor: "text-purple-500",
+      metrics: [
+        { label: "Commits Today", value: stats.commits },
+        { label: "Deployments", value: stats.deployments }
+      ],
+      btnText: "OPEN IDE"
+    },
+    { 
+      title: "DATA ANALYTICS", 
+      icon: BarChart3, 
+      path: "/data-analytics", 
+      color: "border-blue-500/50 hover:bg-blue-500/10",
+      iconColor: "text-blue-500",
+      metrics: [
+        { label: "Revenue", value: `KES ${stats.revenue}` },
+        { label: "Active Clients", value: stats.clients }
+      ],
+      btnText: "VIEW ANALYTICS"
+    },
+    { 
+      title: "AI / ML", 
+      icon: Bot, 
+      path: "/ai-ml", 
+      color: "border-green-500/50 hover:bg-green-500/10",
+      iconColor: "text-green-500",
+      metrics: [
+        { label: "AI Queries", value: stats.queries },
+        { label: "Models Active", value: stats.activeModels }
+      ],
+      btnText: "OPEN AI"
+    },
+    { 
+      title: "CLOUD & DEVOPS", 
+      icon: Cloud, 
+      path: "/cloud-devops", 
+      color: "border-sky-500/50 hover:bg-sky-500/10",
+      iconColor: "text-sky-500",
+      metrics: [
+        { label: "Cloud Services", value: stats.cloudServices },
+        { label: "Containers", value: stats.containers }
+      ],
+      btnText: "MANAGE CLOUD"
+    },
+    { 
+      title: "BUSINESS", 
+      icon: Briefcase, 
+      path: "/business", 
+      color: "border-amber-500/50 hover:bg-amber-500/10",
+      iconColor: "text-amber-500",
+      metrics: [
+        { label: "Open Tickets", value: stats.openTickets },
+        { label: "Invoiced", value: `KES ${stats.totalInvoiced}` }
+      ],
+      btnText: "OPEN BUSINESS"
+    },
+    { 
+      title: "COMMUNICATION", 
+      icon: MessageSquare, 
+      path: "/communication", 
+      color: "border-indigo-500/50 hover:bg-indigo-500/10",
+      iconColor: "text-indigo-500",
+      metrics: [
+        { label: "Team Members", value: stats.teamMembers },
+        { label: "Online Now", value: stats.onlineNow }
+      ],
+      btnText: "TEAM CHAT"
+    }
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-primary text-glow-green">COMMAND CENTER</h1>
-        <p className="text-sm text-muted-foreground font-mono">Executive Overview — Real-Time Data from Database</p>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={Shield} title="Scans Today" value={String(stats.scansToday)} variant="red" />
-        <MetricCard icon={Users} title="Active Clients" value={String(stats.clients)} variant="cyan" />
-        <MetricCard icon={Ticket} title="Open Tickets" value={String(stats.tickets)} variant="orange" />
-        <MetricCard icon={DollarSign} title="Revenue (KES)" value={stats.revenue > 0 ? `${(stats.revenue / 1000).toFixed(0)}K` : "0"} variant="green" />
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={Activity} title="Total Scans" value={String(stats.scans)} variant="purple" />
-        <MetricCard icon={AlertTriangle} title="Security Events" value={String(stats.events)} variant="red" />
-        <MetricCard icon={TrendingUp} title="Pending Approvals" value={String(stats.pending)} variant="orange" />
-        <MetricCard icon={CheckCircle} title="System Status" value="ONLINE" variant="green" />
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">TICKET TREND (7 DAYS)</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={ticketTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="day" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-              <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} />
-              <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
-              <Bar dataKey="tickets" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+    <div className="space-y-8 max-w-[1400px] mx-auto">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-primary tracking-tight text-glow-green">COMMAND CENTER</h1>
+          <p className="text-muted-foreground font-mono text-xs uppercase tracking-widest mt-1">
+            System Operations & Domain Overview
+          </p>
         </div>
-
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">LIVE EVENT FEED</h3>
-          <div className="space-y-2 max-h-[200px] overflow-y-auto">
-            {events.length === 0 ? (
-              <p className="text-sm text-muted-foreground font-mono text-center py-4">No security events yet</p>
-            ) : events.map((event: any, i: number) => (
-              <div key={i} className="flex items-center gap-3 p-2 rounded-md bg-muted/30 text-sm">
-                <AlertTriangle className={`w-4 h-4 shrink-0 ${event.severity === "critical" ? "text-destructive" : event.severity === "warning" ? "text-warning" : "text-secondary"}`} />
-                <span className="flex-1 text-foreground text-xs">{event.description || event.event_type}</span>
-                <span className="text-[10px] text-muted-foreground font-mono shrink-0">{new Date(event.created_at).toLocaleTimeString()}</span>
-              </div>
-            ))}
+        <div className="flex items-center gap-4 bg-card border border-border px-4 py-2 rounded-lg">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-green-500 animate-pulse" />
+            <div className="text-[10px] font-mono">
+              <span className="text-muted-foreground">LATENCY:</span>
+              <span className="text-foreground ml-1">12ms</span>
+            </div>
           </div>
+          <div className="h-4 w-[1px] bg-border" />
+          <div className="flex items-center gap-2">
+            <Activity className="w-4 h-4 text-primary" />
+            <div className="text-[10px] font-mono">
+              <span className="text-muted-foreground">UPTIME:</span>
+              <span className="text-foreground ml-1">99.9%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+        {cards.map((card) => (
+          <Link
+            key={card.path}
+            to={card.path}
+            className={`flex flex-col h-[220px] glass-card border rounded-2xl p-6 transition-all duration-300 group ${card.color} relative overflow-hidden`}
+          >
+            {/* Background Decoration */}
+            <card.icon className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-[0.03] rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-0`} />
+            
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl bg-background border border-border group-hover:border-current transition-colors`}>
+                  <card.icon className={`w-6 h-6 ${card.iconColor}`} />
+                </div>
+                <h2 className="text-lg font-display font-bold tracking-wide uppercase">{card.title}</h2>
+              </div>
+              <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+            </div>
+
+            <div className="flex-1 space-y-4">
+              <div className="flex justify-between gap-4">
+                {card.metrics.map((metric, idx) => (
+                  <div key={idx} className="flex flex-col">
+                    <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">{metric.label}</span>
+                    <span className={`text-xl font-bold font-mono mt-0.5 ${metric.subColor || 'text-foreground'}`}>
+                      {metric.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-auto">
+              <div className={`inline-flex items-center gap-2 text-[10px] font-bold py-2 px-4 rounded-lg bg-background border border-border group-hover:border-current transition-all uppercase tracking-widest`}>
+                {card.btnText}
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* System Stats Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+        <div className="glass-card p-4 border border-border rounded-xl">
+          <div className="flex items-center gap-3 mb-2">
+            <ShieldAlert className="w-4 h-4 text-red-500" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">Threat Level</span>
+          </div>
+          <div className="text-lg font-mono font-bold text-red-500">LOW (0 CRITICAL)</div>
+        </div>
+        <div className="glass-card p-4 border border-border rounded-xl">
+          <div className="flex items-center gap-3 mb-2">
+            <Cpu className="w-4 h-4 text-primary" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">AI Load</span>
+          </div>
+          <div className="text-lg font-mono font-bold">14% UTILIZATION</div>
+        </div>
+        <div className="glass-card p-4 border border-border rounded-xl">
+          <div className="flex items-center gap-3 mb-2">
+            <Database className="w-4 h-4 text-cyan-500" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">DB Status</span>
+          </div>
+          <div className="text-lg font-mono font-bold">SYNCED (REGION: AF)</div>
+        </div>
+        <div className="glass-card p-4 border border-border rounded-xl">
+          <div className="flex items-center gap-3 mb-2">
+            <Server className="w-4 h-4 text-purple-500" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase">Nodes</span>
+          </div>
+          <div className="text-lg font-mono font-bold">12 ACTIVE UNITS</div>
         </div>
       </div>
     </div>

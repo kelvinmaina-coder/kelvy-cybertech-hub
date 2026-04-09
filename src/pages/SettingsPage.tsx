@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Users, Shield, UserCheck, UserX, Search, Loader2, LogOut, Send, Bell } from "lucide-react";
+import { Settings, Users, Shield, UserCheck, UserX, Search, Loader2, LogOut, Send, Bell, Camera, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -100,13 +100,51 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-display font-bold text-foreground">SETTINGS</h1>
         <div className="rounded-lg border border-border bg-card p-6">
-          <h3 className="font-display text-sm text-primary mb-4">MY PROFILE</h3>
-          <div className="space-y-2 text-sm">
-            <p><span className="text-muted-foreground font-mono">Name:</span> <span className="text-foreground">{profile?.full_name || "—"}</span></p>
-            <p><span className="text-muted-foreground font-mono">Phone:</span> <span className="text-foreground">{profile?.phone || "—"}</span></p>
-            <p><span className="text-muted-foreground font-mono">Company:</span> <span className="text-foreground">{profile?.company || "—"}</span></p>
+          <h3 className="font-display text-sm text-primary mb-6">MY PROFILE</h3>
+          <div className="flex flex-col md:flex-row items-start gap-8">
+            <div className="relative group">
+              <div className="w-28 h-28 rounded-2xl bg-primary/10 border-2 border-primary/20 flex items-center justify-center overflow-hidden shadow-inner">
+                {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <UserIcon className="w-14 h-14 text-primary opacity-50" />
+                )}
+              </div>
+              <button className="absolute -bottom-2 -right-2 p-2 rounded-lg bg-primary text-primary-foreground shadow-[0_0_15px_rgba(var(--primary),0.5)] hover:scale-110 transition-all">
+                <Camera className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="flex-1 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground font-mono">Full Name</p>
+                  <p className="text-sm font-semibold">{profile?.full_name || "Kelvy Operator"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground font-mono">Email Address</p>
+                  <p className="text-sm font-semibold">{user?.email}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground font-mono">Phone Number</p>
+                  <p className="text-sm font-semibold">{profile?.phone || "Not provided"}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground font-mono">Organization</p>
+                  <p className="text-sm font-semibold">{profile?.company || "Kelvy CyberTech Hub"}</p>
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t border-border/50">
+                <div className="flex items-center gap-2 text-primary">
+                  <Shield className="w-4 h-4" />
+                  <span className="text-[11px] font-bold font-mono uppercase tracking-widest">AI-Verified Identity Operator</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <button onClick={signOut} className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/20 text-destructive text-sm font-mono hover:bg-destructive/30 transition">
+          
+          <button onClick={signOut} className="mt-8 flex items-center gap-2 px-6 py-2 rounded-lg bg-destructive/10 text-destructive text-xs font-bold uppercase tracking-widest hover:bg-destructive/20 transition">
             <LogOut className="w-4 h-4" /> Sign Out
           </button>
         </div>

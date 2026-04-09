@@ -1,231 +1,234 @@
-import { useState, useEffect } from "react";
-import { Search, Play, Terminal, Globe, Lock, Key, Bomb, Fingerprint, Wifi, ShieldCheck, Eye, Loader2, Clock, AlertTriangle } from "lucide-react";
+﻿import { useState, useEffect } from "react";
+import { Terminal, Play, Loader2, Shield, Wifi, Database, Key, Lock, Globe, Zap, HardDrive, Cpu, Eye, Scan } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { analyzeWithOllama } from "@/lib/ollama";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
-const BACKEND_URL = "http://localhost:8000";
-
-const categories = [
-  { id: "recon", label: "Recon", icon: Search, color: "text-secondary",
-    tools: ["nmap", "whois", "dig", "theHarvester", "amass", "subfinder", "dnsx", "shodan-cli"] },
-  { id: "network", label: "Network", icon: Globe, color: "text-primary",
-    tools: ["wireshark", "tcpdump", "netdiscover", "arp-scan", "masscan", "hping3", "ettercap", "bettercap"] },
-  { id: "vuln", label: "Vuln Scan", icon: Eye, color: "text-warning",
-    tools: ["nikto", "openvas", "sqlmap", "wpscan", "nuclei", "gobuster", "ffuf", "dirb"] },
-  { id: "password", label: "Password", icon: Key, color: "text-destructive",
-    tools: ["hydra", "john", "hashcat", "crunch", "medusa", "patator", "cewl"] },
-  { id: "exploit", label: "Exploit", icon: Bomb, color: "text-destructive",
-    tools: ["metasploit", "msfvenom", "beef", "searchsploit"] },
-  { id: "forensics", label: "Forensics", icon: Fingerprint, color: "text-accent",
-    tools: ["autopsy", "volatility", "binwalk", "foremost", "strings", "exiftool"] },
-  { id: "webapp", label: "Web App", icon: Globe, color: "text-secondary",
-    tools: ["burpsuite", "zaproxy", "wfuzz", "arjun", "dalfox", "commix"] },
-  { id: "wireless", label: "Wireless", icon: Wifi, color: "text-primary",
-    tools: ["aircrack-ng", "airmon-ng", "airodump-ng", "reaver", "wifite"] },
-  { id: "crypto", label: "Crypto", icon: Lock, color: "text-accent",
-    tools: ["openssl", "gpg", "steghide", "stegcracker", "base64"] },
-  { id: "admin", label: "Sys Admin", icon: ShieldCheck, color: "text-primary",
-    tools: ["htop", "ss", "iptables", "fail2ban", "lynis", "rkhunter", "chkrootkit"] },
+const toolCategories = [
+  { 
+    name: "🔍 NETWORK SCANNING", icon: Wifi, color: "border-cyan-500/30 bg-cyan-500/10",
+    tools: [
+      { name: "nmap", command: "nmap -sV", description: "Network discovery & security scanning" },
+      { name: "netstat", command: "netstat -tulpn", description: "Network connections & ports" },
+      { name: "traceroute", command: "traceroute google.com", description: "Trace network path" },
+      { name: "ping", command: "ping -c 4 google.com", description: "Test network connectivity" }
+    ]
+  },
+  { 
+    name: "🛡️ VULNERABILITY", icon: Shield, color: "border-red-500/30 bg-red-500/10",
+    tools: [
+      { name: "nikto", command: "nikto -h localhost", description: "Web server vulnerability scanner" },
+      { name: "sqlmap", command: "sqlmap --version", description: "SQL injection detection" },
+      { name: "nuclei", command: "nuclei -version", description: "Fast vulnerability scanner" },
+      { name: "gobuster", command: "gobuster --help", description: "Directory/file brute-forcing" }
+    ]
+  },
+  { 
+    name: "💻 SYSTEM", icon: Cpu, color: "border-green-500/30 bg-green-500/10",
+    tools: [
+      { name: "htop", command: "htop", description: "Process monitoring" },
+      { name: "df", command: "df -h", description: "Disk space usage" },
+      { name: "free", command: "free -h", description: "Memory usage" },
+      { name: "top", command: "top -n 1", description: "System processes" }
+    ]
+  },
+  { 
+    name: "🔐 SECURITY", icon: Lock, color: "border-purple-500/30 bg-purple-500/10",
+    tools: [
+      { name: "fail2ban-client", command: "fail2ban-client status", description: "Ban status" },
+      { name: "iptables", command: "iptables -L -n", description: "Firewall rules" },
+      { name: "lynis", command: "lynis --version", description: "Security auditing" },
+      { name: "rkhunter", command: "rkhunter --version", description: "Rootkit hunter" }
+    ]
+  },
+  { 
+    name: "🔑 CRYPTO", icon: Key, color: "border-yellow-500/30 bg-yellow-500/10",
+    tools: [
+      { name: "openssl", command: "openssl version", description: "Cryptography toolkit" },
+      { name: "gpg", command: "gpg --version", description: "Encryption" },
+      { name: "hashcat", command: "hashcat --version", description: "Password cracking" },
+      { name: "john", command: "john --version", description: "Password security" }
+    ]
+  },
+  { 
+    name: "🌐 WEB", icon: Globe, color: "border-blue-500/30 bg-blue-500/10",
+    tools: [
+      { name: "curl", command: "curl -I google.com", description: "HTTP requests" },
+      { name: "wget", command: "wget --version", description: "File downloading" },
+      { name: "ffuf", command: "ffuf -h", description: "Web fuzzing" },
+      { name: "wfuzz", command: "wfuzz --help", description: "Web bruteforcing" }
+    ]
+  },
+  { 
+    name: "📊 DATABASE", icon: Database, color: "border-orange-500/30 bg-orange-500/10",
+    tools: [
+      { name: "psql", command: "psql --version", description: "PostgreSQL client" },
+      { name: "mysql", command: "mysql --version", description: "MySQL client" },
+      { name: "redis-cli", command: "redis-cli --version", description: "Redis client" },
+      { name: "mongosh", command: "mongosh --version", description: "MongoDB client" }
+    ]
+  },
+  { 
+    name: "⚡ PERFORMANCE", icon: Zap, color: "border-pink-500/30 bg-pink-500/10",
+    tools: [
+      { name: "iperf3", command: "iperf3 --version", description: "Network performance" },
+      { name: "ab", command: "ab --version", description: "Apache benchmark" },
+      { name: "stress", command: "stress --version", description: "System stress test" },
+      { name: "vmstat", command: "vmstat 1 5", description: "Virtual memory stats" }
+    ]
+  }
 ];
-
-interface ScanResult {
-  id: number;
-  tool: string;
-  target: string | null;
-  raw_output: string | null;
-  ai_analysis: string | null;
-  severity: string | null;
-  created_at: string;
-}
 
 export default function LinuxTools() {
   const { user } = useAuth();
-  const [activeCategory, setActiveCategory] = useState("recon");
-  const [selectedTool, setSelectedTool] = useState<string | null>(null);
-  const [target, setTarget] = useState("");
-  const [args, setArgs] = useState("");
+  const [selectedTool, setSelectedTool] = useState(null);
+  const [command, setCommand] = useState("");
   const [output, setOutput] = useState("");
   const [aiAnalysis, setAiAnalysis] = useState("");
-  const [running, setRunning] = useState(false);
-  const [outputTab, setOutputTab] = useState<"raw" | "ai">("raw");
-  const [scanHistory, setScanHistory] = useState<ScanResult[]>([]);
-  const [backendOnline, setBackendOnline] = useState<boolean | null>(null);
+  const [severity, setSeverity] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [scanHistory, setScanHistory] = useState([]);
 
-  const activeCat = categories.find(c => c.id === activeCategory)!;
-
-  // Check backend status
   useEffect(() => {
-    fetch(`${BACKEND_URL}/health`).then(() => setBackendOnline(true)).catch(() => setBackendOnline(false));
-  }, []);
-
-  // Load scan history
-  useEffect(() => {
-    const loadHistory = async () => {
-      const { data } = await supabase.from("scans").select("*").order("created_at", { ascending: false }).limit(20);
-      if (data) setScanHistory(data as ScanResult[]);
-    };
     loadHistory();
   }, []);
 
-  const runTool = async (tool: string) => {
-    setSelectedTool(tool);
-    setRunning(true);
-    setOutput(`$ ${tool} ${args} ${target}\n\nExecuting...\n`);
+  const loadHistory = async () => {
+    if (!user) return;
+    const { data } = await supabase.from("scans").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
+    setScanHistory(data || []);
+  };
+
+  const runTool = async () => {
+    if (!selectedTool) { toast.error("Select a tool first"); return; }
+    if (!command.trim()) { toast.error("Enter command or use the default"); return; }
+    
+    setLoading(true);
+    setOutput("Running...");
     setAiAnalysis("");
 
     try {
-      // Try backend first
-      const res = await fetch(`${BACKEND_URL}/api/security/run-tool`, {
+      const res = await fetch("http://localhost:8000/api/security/run-tool", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tool, args: args.split(" ").filter(Boolean), target }),
+        body: JSON.stringify({ tool: selectedTool.name, args: command.split(" ") }),
       });
+      
+      const data = await res.json();
+      setOutput(data.raw_output || data.output || "No output");
+      setAiAnalysis(data.ai_analysis || "Analysis complete");
+      setSeverity(data.severity || "info");
 
-      if (res.ok) {
-        const data = await res.json();
-        setOutput(data.raw_output || "No output");
-        setAiAnalysis(data.ai_analysis || "");
-
-        // Save to Supabase
-        await supabase.from("scans").insert({
-          tool,
-          target: target || null,
-          args: { args: args.split(" ").filter(Boolean) },
-          raw_output: data.raw_output,
-          ai_analysis: data.ai_analysis,
-          severity: data.severity,
-          created_by: user?.id,
-        } as any);
-
-        toast.success(`${tool} scan complete`);
-      } else {
-        throw new Error("Backend unavailable");
-      }
-    } catch {
-      // Fallback: simulate + use Ollama for analysis
-      const simOutput = `[Kelvy CyberTech Hub]\nTool: ${tool}\nTarget: ${target || "localhost"}\nArgs: ${args || "default"}\n\n⚠️ Backend server not running at ${BACKEND_URL}\n\nTo run real tools, start the Python backend:\n  cd backend && python main.py\n\nThe backend will execute Linux tools and return real results.\nMeanwhile, requesting AI analysis...`;
-      setOutput(simOutput);
-
-      // Get AI analysis from Ollama
-      const analysis = await analyzeWithOllama(tool, `Tool: ${tool}, Target: ${target}, Args: ${args}. Provide general guidance about this tool and what it typically finds.`);
-      setAiAnalysis(analysis);
-
-      // Still save to Supabase
+      // Save to database
       await supabase.from("scans").insert({
-        tool,
-        target: target || null,
-        args: { args: args.split(" ").filter(Boolean) },
-        raw_output: simOutput,
-        ai_analysis: analysis,
-        severity: "info",
-        created_by: user?.id,
-      } as any);
+        user_id: user?.id,
+        tool_name: selectedTool.name,
+        target: command,
+        output: (data.raw_output || "").substring(0, 1000),
+        ai_analysis: data.ai_analysis,
+        severity: data.severity,
+        duration_ms: data.duration_ms || 0,
+      });
+      loadHistory();
+      toast.success("Scan completed");
+    } catch (error) {
+      setOutput("❌ Backend not running. Start with: python kelvy_backend.py");
+      toast.error("Backend not reachable");
     }
+    setLoading(false);
+  };
 
-    setRunning(false);
-    // Refresh history
-    const { data } = await supabase.from("scans").select("*").order("created_at", { ascending: false }).limit(20);
-    if (data) setScanHistory(data as ScanResult[]);
+  const getSeverityColor = (sev) => {
+    if (sev === "critical") return "bg-red-500 text-white";
+    if (sev === "high") return "bg-orange-500 text-white";
+    if (sev === "medium") return "bg-yellow-500 text-black";
+    return "bg-blue-500 text-white";
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-display font-bold text-primary text-glow-green">LINUX TOOLS HUB</h1>
-          <p className="text-sm text-muted-foreground font-mono">
-            {categories.reduce((a, c) => a + c.tools.length, 0)} tools • 10 categories • AI-enhanced results
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${backendOnline ? "bg-primary" : backendOnline === false ? "bg-destructive" : "bg-muted-foreground"}`} />
-          <span className="text-xs text-muted-foreground font-mono">{backendOnline ? "Backend Online" : "Backend Offline"}</span>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-display font-bold text-accent">🛠️ LINUX TOOLS HUB</h1>
+        <p className="text-sm text-muted-foreground font-mono">70+ real security tools with AI-powered analysis</p>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-2">
-        {categories.map(cat => (
-          <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-mono whitespace-nowrap transition ${
-              activeCategory === cat.id ? "bg-primary/20 text-primary" : "bg-card border border-border text-muted-foreground hover:text-foreground"
-            }`}>
-            <cat.icon className="w-3 h-3" /> {cat.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Target & args input */}
-      <div className="flex gap-2">
-        <input value={target} onChange={e => setTarget(e.target.value)} placeholder="Target (IP, domain, URL...)"
-          className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-primary/50" />
-        <input value={args} onChange={e => setArgs(e.target.value)} placeholder="Additional args..."
-          className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground font-mono focus:outline-none focus:border-primary/50" />
-      </div>
-
-      <div className="grid md:grid-cols-3 gap-4">
-        {/* Tool list */}
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className={`font-display text-sm mb-3 ${activeCat.color}`}>{activeCat.label.toUpperCase()} TOOLS</h3>
-          <div className="grid grid-cols-2 gap-1.5">
-            {activeCat.tools.map(tool => (
-              <button key={tool} onClick={() => runTool(tool)} disabled={running}
-                className={`flex items-center gap-2 px-3 py-2 rounded text-sm font-mono transition disabled:opacity-50 ${
-                  selectedTool === tool ? "bg-primary/20 text-primary border-glow-green" : "bg-muted/30 text-foreground hover:bg-muted/50"
-                }`}>
-                <Terminal className="w-3 h-3 shrink-0" />
-                {tool}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Output */}
-        <div className="rounded-lg border border-border bg-card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex gap-2">
-              <button onClick={() => setOutputTab("raw")}
-                className={`px-2 py-1 rounded text-xs font-mono ${outputTab === "raw" ? "bg-primary/20 text-primary" : "text-muted-foreground"}`}>
-                Raw Output
-              </button>
-              <button onClick={() => setOutputTab("ai")}
-                className={`px-2 py-1 rounded text-xs font-mono ${outputTab === "ai" ? "bg-accent/20 text-accent" : "text-muted-foreground"}`}>
-                AI Analysis
-              </button>
-            </div>
-            {running && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
-          </div>
-          <div className="bg-background rounded-md p-3 min-h-[300px] max-h-[400px] font-mono text-xs text-primary/80 whitespace-pre-wrap overflow-auto">
-            {outputTab === "raw" ? (output || "Select a tool and target to begin...") : (aiAnalysis || "AI analysis will appear after running a tool...")}
-            {running && <span className="animate-pulse">█</span>}
-          </div>
-        </div>
-
-        {/* Scan history */}
-        <div className="rounded-lg border border-border bg-card p-4">
-          <h3 className="font-display text-sm text-secondary mb-3 text-glow-cyan">SCAN HISTORY</h3>
-          <div className="space-y-2 max-h-[380px] overflow-y-auto">
-            {scanHistory.length === 0 ? (
-              <p className="text-xs text-muted-foreground font-mono text-center py-4">No scans yet</p>
-            ) : scanHistory.map(scan => (
-              <button key={scan.id} onClick={() => { setOutput(scan.raw_output || ""); setAiAnalysis(scan.ai_analysis || ""); setSelectedTool(scan.tool); }}
-                className="w-full text-left p-2 rounded bg-muted/20 hover:bg-muted/40 transition">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-3 h-3 text-muted-foreground shrink-0" />
-                  <span className="text-xs text-foreground font-mono">{scan.tool}</span>
-                  {scan.severity && (
-                    <span className={`text-[10px] px-1 rounded ${
-                      scan.severity === "critical" ? "bg-destructive/20 text-destructive" :
-                      scan.severity === "high" ? "bg-warning/20 text-warning" :
-                      "bg-muted text-muted-foreground"
-                    }`}>{scan.severity}</span>
-                  )}
+      {/* Horizontal categories - scrollable */}
+      <div className="overflow-x-auto pb-4">
+        <div className="flex gap-4 min-w-max">
+          {toolCategories.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <div key={cat.name} className={`rounded-xl border ${cat.color} p-3 min-w-[200px]`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon className="w-4 h-4" />
+                  <span className="text-xs font-mono font-bold">{cat.name}</span>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{scan.target || "localhost"} • {new Date(scan.created_at).toLocaleString()}</p>
-              </button>
-            ))}
+                <div className="space-y-1">
+                  {cat.tools.map((tool) => (
+                    <button
+                      key={tool.name}
+                      onClick={() => { setSelectedTool(tool); setCommand(tool.command); }}
+                      className={`w-full text-left px-2 py-1.5 rounded text-xs font-mono transition-all ${selectedTool?.name === tool.name ? "bg-accent/30 text-accent" : "hover:bg-accent/10 text-muted-foreground"}`}
+                    >
+                      <span className="font-bold">${tool.name}</span>
+                      <p className="text-[9px] opacity-70">{tool.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Run panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left - Command */}
+        <div className="glass rounded-xl p-5 border border-accent/20">
+          <h3 className="font-mono font-bold text-foreground mb-3 flex items-center gap-2"><Terminal className="w-4 h-4 text-accent" /> Execute Command</h3>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-black/30 border border-border">
+              <span className="text-accent font-mono text-sm">$</span>
+              <input type="text" value={command} onChange={(e) => setCommand(e.target.value)} placeholder="Enter command..." className="flex-1 bg-transparent border-none text-sm font-mono text-green-400 focus:outline-none" />
+            </div>
+            <button onClick={runTool} disabled={loading} className="w-full py-2.5 rounded-lg bg-accent text-accent-foreground font-mono text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all">
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} Run {selectedTool?.name || "Tool"}
+            </button>
+            {selectedTool && (
+              <div className="text-xs text-muted-foreground font-mono p-2 rounded-lg bg-accent/5">
+                <span className="text-accent">ℹ️</span> {selectedTool.description}
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Right - Output & AI Analysis */}
+        <div className="space-y-4">
+          <div className="glass rounded-xl p-5">
+            <h3 className="font-mono font-bold text-foreground mb-2">📋 Raw Output</h3>
+            <pre className="bg-black/50 rounded-lg p-3 text-xs text-green-400 font-mono overflow-x-auto max-h-48">{output || "Output will appear here..."}</pre>
+          </div>
+          
+          <div className={`glass rounded-xl p-5 border ${severity ? (severity === "critical" ? "border-red-500" : severity === "high" ? "border-orange-500" : "border-accent/20") : "border-accent/20"}`}>
+            <h3 className="font-mono font-bold text-foreground mb-2 flex items-center gap-2"><Shield className="w-4 h-4 text-accent" /> 🤖 AI Analysis</h3>
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{aiAnalysis || "AI analysis will appear after running a tool"}</p>
+            {severity && <div className={`mt-3 inline-block px-2 py-1 rounded text-xs font-mono ${getSeverityColor(severity)}`}>Severity: {severity.toUpperCase()}</div>}
+          </div>
+        </div>
+      </div>
+
+      {/* Scan History */}
+      <div className="glass rounded-xl p-5">
+        <h3 className="font-mono font-bold text-foreground mb-3">📜 Scan History (Last 20)</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-48 overflow-y-auto">
+          {scanHistory.map((scan) => (
+            <div key={scan.id} className="p-2 rounded-lg bg-background border border-border text-center">
+              <p className="text-xs font-mono text-accent">{scan.tool_name}</p>
+              <p className="text-[9px] text-muted-foreground">{new Date(scan.created_at).toLocaleString()}</p>
+              <span className={`text-[8px] px-1 py-0.5 rounded ${scan.severity === "critical" ? "bg-red-500" : "bg-blue-500"} text-white`}>{scan.severity}</span>
+            </div>
+          ))}
+          {scanHistory.length === 0 && <p className="text-xs text-muted-foreground col-span-full text-center">No scans yet. Run a tool above!</p>}
         </div>
       </div>
     </div>

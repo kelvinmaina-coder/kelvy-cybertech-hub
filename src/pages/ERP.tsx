@@ -84,7 +84,7 @@ export default function ERP() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <MetricCard icon={DollarSign} title="Revenue" value={`${(totalRevenue / 1000).toFixed(0)}K`} variant="green" change="KES (Paid)" />
-        <MetricCard icon={CreditCard} title="Pending" value={`${(totalPending / 1000).toFixed(0)}K`} variant="orange" change="KES" />
+        <MetricCard icon={CreditCard} title="Pending" value={`${(totalPending / 1000).toFixed(0)}K`} variant="orange" change="KES (Due)" />
         <MetricCard icon={FileText} title="Invoices" value={String(invoices.length)} variant="cyan" />
         <MetricCard icon={Package} title="Overdue" value={String(overdueCount)} variant="red" />
       </div>

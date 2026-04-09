@@ -36,7 +36,7 @@ class OllamaGateway:
             payload["messages"].append({"role": "system", "content": system_prompt})
         payload["messages"].extend(messages)
 
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=180) as client:
             async with client.stream("POST", f"{self.base_url}/api/chat", json=payload) as r:
                 async for line in r.aiter_lines():
                     if line.strip():
@@ -50,9 +50,22 @@ class OllamaGateway:
                         except json.JSONDecodeError:
                             continue
 
+    async def vision(self, prompt: str, image_base64: str, model: str = "qwen3-vl:8b") -> str:
+        """Analyze an image using a vision-language model."""
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "images": [image_base64],
+            "stream": False
+        }
+        async with httpx.AsyncClient(timeout=180) as client:
+            r = await client.post(f"{self.base_url}/api/generate", json=payload)
+            r.raise_for_status()
+            return r.json().get("response", "")
+
     async def generate(self, prompt: str, model: str = "qwen2.5:7b") -> str:
         """Non-streaming generation."""
-        async with httpx.AsyncClient(timeout=120) as client:
+        async with httpx.AsyncClient(timeout=180) as client:
             r = await client.post(
                 f"{self.base_url}/api/generate",
                 json={"model": model, "prompt": prompt, "stream": False},
@@ -70,21 +83,24 @@ class OllamaGateway:
             r.raise_for_status()
             return r.json().get("embedding", [])
 
-    async def analyze_output(self, tool: str, output: str) -> dict:
-        """Analyze security tool output and return structured analysis."""
-        prompt = f"""Analyze this security tool output from '{tool}'. Explain:
-1) What was found
-2) Severity (Critical/High/Medium/Low/Info)
-3) Recommended actions
+    async def analyze_security(self, tool: str, output: str) -> dict:
+        """Use qwen2.5:7b for detailed attack analysis and recommendations."""
+        prompt = f"""[SECURITY ANALYST MODE]
+Analyze this security tool output from '{tool}'. Identify threats, assign a severity score, and suggest mitigation steps.
 
 Tool output:
-{output[:4000]}
+{output[:5000]}
 
-Respond in JSON format:
-{{"analysis": "...", "severity": "...", "recommendations": ["..."]}}"""
+Respond ONLY in strict JSON format:
+{{"analysis": "...", "severity": "Critical|High|Medium|Low", "recommendations": ["...", "..."]}}"""
 
-        response = await self.generate(prompt)
+        response = await self.generate(prompt, model="qwen2.5:7b")
         try:
+            # Attempt to extract JSON if encapsulated in markdown
+            if "```json" in response:
+                response = response.split("```json")[1].split("```")[0].strip()
+            elif "```" in response:
+                response = response.split("```")[1].strip()
             return json.loads(response)
-        except json.JSONDecodeError:
+        except Exception:
             return {"analysis": response, "severity": "Info", "recommendations": []}

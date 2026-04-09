@@ -14,7 +14,7 @@ export default function ThemeSwitcher({ collapsed }: { collapsed?: boolean }) {
         title="Switch Theme"
       >
         <Palette className="w-3.5 h-3.5 shrink-0" />
-        {!collapsed && <span className="font-mono truncate">{themes.find(t => t.id === theme)?.label}</span>}
+        {!collapsed && <span className="font-mono truncate">{themes.find(t => t.id === theme)?.label || "Select Theme"}</span>}
       </button>
 
       {open && (

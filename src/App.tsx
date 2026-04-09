@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -7,27 +8,39 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import DashboardLayout from "@/components/DashboardLayout";
-import LandingPage from "@/pages/LandingPage";
-import AuthPage from "@/pages/AuthPage";
-import ResetPassword from "@/pages/ResetPassword";
-import Dashboard from "@/pages/Dashboard";
-import SecurityHub from "@/pages/SecurityHub";
-import AIAssistant from "@/pages/AIAssistant";
-import LinuxTools from "@/pages/LinuxTools";
-import CRM from "@/pages/CRM";
-import ERP from "@/pages/ERP";
-import ITSM from "@/pages/ITSM";
-import Analytics from "@/pages/Analytics";
-import NetworkHub from "@/pages/NetworkHub";
-import IDE from "@/pages/IDE";
-import Automation from "@/pages/Automation";
-import ClientPortal from "@/pages/ClientPortal";
-import SettingsPage from "@/pages/SettingsPage";
-import Chat from "@/pages/Chat";
-import Notifications from "@/pages/Notifications";
-import Calls from "@/pages/Calls";
-import Meetings from "@/pages/Meetings";
-import NotFound from "@/pages/NotFound";
+import { Loader2 } from "lucide-react";
+
+// Lazy-loaded pages
+const LandingPage = lazy(() => import("@/pages/LandingPage"));
+const AuthPage = lazy(() => import("@/pages/AuthPage"));
+const ResetPassword = lazy(() => import("@/pages/ResetPassword"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
+const SecuritySettingsPage = lazy(() => import("@/pages/SecuritySettingsPage"));
+const CallPage = lazy(() => import("@/pages/call/[userId]"));
+const GroupCallPage = lazy(() => import("@/pages/GroupCallPage"));
+const EnhancedChatWithAI = lazy(() => import("@/pages/EnhancedChatWithAI"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
+
+// Domain pages (Lazy)
+const CybersecurityDomain = lazy(() => import("@/pages/domains/CybersecurityDomain"));
+const NetworkingDomain = lazy(() => import("@/pages/domains/NetworkingDomain"));
+const SoftwareDevDomain = lazy(() => import("@/pages/domains/SoftwareDevDomain"));
+const DataAnalyticsDomain = lazy(() => import("@/pages/domains/DataAnalyticsDomain"));
+const AIMLDomain = lazy(() => import("@/pages/domains/AIMLDomain"));
+const CloudDevOpsDomain = lazy(() => import("@/pages/domains/CloudDevOpsDomain"));
+const MobileDomain = lazy(() => import("@/pages/domains/MobileDomain"));
+const BusinessDomain = lazy(() => import("@/pages/domains/BusinessDomain"));
+const CommunicationDomain = lazy(() => import("@/pages/domains/CommunicationDomain"));
+
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center h-screen bg-background">
+    <div className="flex flex-col items-center gap-4">
+      <Loader2 className="w-12 h-12 text-primary animate-spin" />
+      <p className="font-mono text-sm text-muted-foreground animate-pulse">Initializing Neural Interface...</p>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -37,112 +50,48 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/*" element={
-                <ProtectedRoute>
-                  <DashboardLayout>
-                    <Routes>
-                      <Route path="/dashboard" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client", "guest"]}>
-                          <Dashboard />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/security" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "security_analyst"]}>
-                          <SecurityHub />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/ai" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician"]}>
-                          <AIAssistant />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/tools" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "security_analyst", "technician"]}>
-                          <LinuxTools />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/crm" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
-                          <CRM />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/erp" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
-                          <ERP />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/itsm" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "technician"]}>
-                          <ITSM />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/analytics" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager"]}>
-                          <Analytics />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/network" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "security_analyst"]}>
-                          <NetworkHub />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/ide" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "technician"]}>
-                          <IDE />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/automation" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "technician"]}>
-                          <Automation />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/portal" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "client"]}>
-                          <ClientPortal />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/chat" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
-                          <Chat />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/notifications" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
-                          <Notifications />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/calls" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
-                          <Calls />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/meetings" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
-                          <Meetings />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/settings" element={
-                        <ProtectedRoute allowedRoles={["super_admin", "manager", "security_analyst", "technician", "client"]}>
-                          <SettingsPage />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </DashboardLayout>
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
+        <Suspense fallback={<LoadingFallback />}>
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                
+                {/* Main App Routes with DashboardLayout */}
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/cybersecurity" element={<ProtectedRoute><DashboardLayout><CybersecurityDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/networking" element={<ProtectedRoute><DashboardLayout><NetworkingDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/software-dev" element={<ProtectedRoute><DashboardLayout><SoftwareDevDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/data-analytics" element={<ProtectedRoute><DashboardLayout><DataAnalyticsDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/ai-ml" element={<ProtectedRoute><DashboardLayout><AIMLDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/cloud-devops" element={<ProtectedRoute><DashboardLayout><CloudDevOpsDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/mobile" element={<ProtectedRoute><DashboardLayout><MobileDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/business" element={<ProtectedRoute><DashboardLayout><BusinessDomain /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/communication" element={<ProtectedRoute><DashboardLayout><CommunicationDomain /></DashboardLayout></ProtectedRoute>} />
+                
+                {/* Other settings / extras */}
+                <Route path="/settings" element={<ProtectedRoute><DashboardLayout><SecuritySettingsPage /></DashboardLayout></ProtectedRoute>} />
+                <Route path="/enhanced-chat" element={<ProtectedRoute><DashboardLayout><EnhancedChatWithAI /></DashboardLayout></ProtectedRoute>} />
+                
+                {/* Call Routes - without DashboardLayout (full screen) */}
+                <Route path="/call/:userId" element={<ProtectedRoute><CallPage /></ProtectedRoute>} />
+                <Route path="/group-call/:roomId" element={<ProtectedRoute><GroupCallPage /></ProtectedRoute>} />
+                
+                {/* 404 Not Found */}
+                <Route path="*" element={<LandingPage />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </Suspense>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );
 
 export default App;
+
+
+
+
+

@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
-import { Ticket, Clock, CheckCircle, AlertTriangle, Plus, X, Loader2, UserPlus } from "lucide-react";
+import { 
+  Ticket, Clock, CheckCircle, AlertTriangle, Plus, X, Loader2, UserPlus, 
+  RefreshCw  // <--- THE FIX IS RIGHT HERE
+} from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +34,7 @@ export default function ITSM() {
   const [form, setForm] = useState({ title: "", description: "", priority: "medium", client_id: "", assigned_to: "" });
 
   const loadData = async () => {
+    setLoading(true);
     const [ticketRes, profilesRes, clientsRes] = await Promise.all([
       supabase.from("tickets").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("id, full_name"),
@@ -88,10 +92,21 @@ export default function ITSM() {
           <h1 className="text-2xl font-display font-bold text-warning">ITSM — SUPPORT CENTER</h1>
           <p className="text-sm text-muted-foreground font-mono">Ticket Management • Real-Time</p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warning/20 text-warning text-xs font-mono hover:bg-warning/30 transition">
-          {showAdd ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />} {showAdd ? "Cancel" : "New Ticket"}
-        </button>
+        <div className="flex items-center gap-2">
+          {/* USAGE OF REFRESHCW ICON */}
+          <button 
+            onClick={loadData}
+            className="p-1.5 rounded-lg bg-muted hover:bg-muted/50 transition text-muted-foreground"
+            title="Refresh Data"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          
+          <button onClick={() => setShowAdd(!showAdd)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warning/20 text-warning text-xs font-mono hover:bg-warning/30 transition">
+            {showAdd ? <X className="w-3 h-3" /> : <Plus className="w-3 h-3" />} {showAdd ? "Cancel" : "New Ticket"}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

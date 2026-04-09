@@ -31,7 +31,9 @@ export default function LandingPage() {
       <nav className="border-b border-border/50 backdrop-blur-lg bg-background/80 sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={kelvyLogo} alt="Kelvy CyberTech" className="w-8 h-8 rounded-lg" />
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-primary" />
+            </div>
             <span className="font-display text-sm font-bold text-primary">KELVY CYBERTECH HUB</span>
           </div>
           <div className="flex items-center gap-3">
@@ -127,7 +129,7 @@ export default function LandingPage() {
       <footer className="border-t border-border/50 py-6">
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <img src={kelvyLogo} alt="Kelvy" className="w-5 h-5 rounded" />
+            <Shield className="w-4 h-4 text-primary" />
             <span className="text-xs text-muted-foreground font-mono">© 2026 Kelvy CyberTech Hub. All rights reserved.</span>
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">Built by Kelvin • Powered by Ollama AI • Made in Kenya 🇰🇪</p>

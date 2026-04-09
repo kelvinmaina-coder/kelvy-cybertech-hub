@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Shield, Bot, Users, Briefcase, Ticket,
   BarChart3, Network, Code, Settings, Terminal, ChevronLeft,
   ChevronRight, Zap, Globe, Menu, LogOut, MessageSquare, Bell,
-  Phone, Calendar
+  Phone, Calendar, Wifi, Server, Database, Brain, Fingerprint,
+  Smartphone, FileText, BookOpen, Activity, Clock, AlertTriangle,
+  CheckCircle, Video, Mic, Monitor, UserPlus, Mail, Lock, Unlock,
+  Eye, Cloud, ChevronDown, ArrowLeft
 } from "lucide-react";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import NotificationBell from "@/components/NotificationBell";
+import IncomingCallModal from "@/components/IncomingCallModal";
+import { usePresence } from "@/hooks/usePresence";
 import kelvyLogo from "@/assets/kelvy-logo.png";
 
 interface NavItem {
@@ -17,53 +22,65 @@ interface NavItem {
   label: string;
   path: string;
   roles: AppRole[];
+  subItems?: NavItem[];
 }
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Shield, label: "Security Hub", path: "/security", roles: ["super_admin", "security_analyst"] },
-  { icon: Bot, label: "AI Assistant", path: "/ai", roles: ["super_admin", "manager", "security_analyst", "technician"] },
-  { icon: Terminal, label: "Linux Tools", path: "/tools", roles: ["super_admin", "security_analyst", "technician"] },
-  { icon: MessageSquare, label: "Chat", path: "/chat", roles: ["super_admin", "manager", "security_analyst", "technician", "client"] },
-  { icon: Users, label: "CRM", path: "/crm", roles: ["super_admin", "manager"] },
-  { icon: Briefcase, label: "ERP", path: "/erp", roles: ["super_admin", "manager"] },
-  { icon: Ticket, label: "ITSM", path: "/itsm", roles: ["super_admin", "manager", "technician"] },
-  { icon: BarChart3, label: "Analytics", path: "/analytics", roles: ["super_admin", "manager"] },
-  { icon: Network, label: "Network", path: "/network", roles: ["super_admin", "security_analyst"] },
-  { icon: Code, label: "IDE", path: "/ide", roles: ["super_admin", "technician"] },
-  { icon: Zap, label: "Automation", path: "/automation", roles: ["super_admin", "technician"] },
-  { icon: Globe, label: "Client Portal", path: "/portal", roles: ["super_admin", "manager", "client"] },
-  { icon: Phone, label: "Calls", path: "/calls", roles: ["super_admin", "manager", "security_analyst", "technician", "client"] },
-  { icon: Calendar, label: "Meetings", path: "/meetings", roles: ["super_admin", "manager", "security_analyst", "technician", "client"] },
-  { icon: Settings, label: "Settings", path: "/settings", roles: ["super_admin", "manager", "security_analyst", "technician", "client"] },
+  { icon: Shield, label: "Cybersecurity", path: "/cybersecurity", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: Network, label: "Networking", path: "/networking", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: Code, label: "Software Dev", path: "/software-dev", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: BarChart3, label: "Data Analytics", path: "/data-analytics", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: Bot, label: "AI/ML", path: "/ai-ml", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: Briefcase, label: "Business", path: "/business", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: MessageSquare, label: "Communication", path: "/communication", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
+  { icon: Settings, label: "Settings", path: "/settings", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
   const location = useLocation();
   const { roles, profile, signOut } = useAuth();
   const { scanlineEnabled } = useTheme();
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>({});
+  usePresence(); // Keep presence updated globally
+
+  const currentPath = location.pathname;
+  const currentNav = navItems.find(item => item.path === currentPath);
+  const showBackButton = currentPath !== "/dashboard" && currentPath !== "/";
 
   const visibleNav = navItems.filter(item => item.roles.some(r => roles.includes(r)));
+
+  const toggleNav = (path: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    setExpandedNav(prev => ({ ...prev, [path]: !prev[path] }));
+  };
 
   const SidebarContent = () => (
     <>
       <div className="flex items-center gap-3 p-4 border-b border-border">
-        <img src={kelvyLogo} alt="Kelvy CyberTech Hub" className="w-10 h-10 rounded-lg" />
+        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
+          <Shield className="w-6 h-6 text-primary" />
+        </div>
         {!collapsed && (
           <div className="min-w-0">
             <h1 className="font-display text-sm font-bold text-primary truncate text-glow-green">KELVY CYBERTECH</h1>
-            <p className="text-[10px] text-muted-foreground tracking-widest">HUB v1.0</p>
+            <p className="text-[10px] text-muted-foreground tracking-widest">HUB v2.0</p>
           </div>
         )}
       </div>
 
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
         {visibleNav.map((item) => {
-          const active = location.pathname === item.path;
+          const active = location.pathname.startsWith(item.path);
+          
           return (
-            <Link key={item.path} to={item.path} onClick={() => setMobileOpen(false)}
+            <Link 
+              key={item.path} 
+              to={item.path} 
+              onClick={() => setMobileOpen(false)}
               className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 group
                 ${active ? "bg-primary/10 text-primary border-glow-green" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}>
               <item.icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
@@ -111,19 +128,42 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <SidebarContent />
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-12 border-b border-border flex items-center justify-between px-4 shrink-0 glass-strong">
-          <button className="lg:hidden text-muted-foreground" onClick={() => setMobileOpen(true)}>
-            <Menu className="w-5 h-5" />
-          </button>
-          <div className="flex items-center gap-3 ml-auto">
+        <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 glass-strong">
+          <div className="flex items-center gap-4">
+            <button className="lg:hidden text-muted-foreground" onClick={() => setMobileOpen(true)}>
+              <Menu className="w-5 h-5" />
+            </button>
+            
+            {showBackButton && (
+              <button 
+                onClick={() => navigate(-1)}
+                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline text-xs font-medium">Back</span>
+              </button>
+            )}
+
+            {currentNav && (
+              <div className="flex items-center gap-2">
+                <currentNav.icon className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-display font-bold uppercase tracking-wider">{currentNav.label}</h2>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
             <NotificationBell />
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse-glow" />
-            <span className="text-xs text-muted-foreground font-mono">SYSTEM ONLINE</span>
+            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-glow" />
+              <span className="text-[10px] text-muted-foreground font-mono">NODE_ONLINE</span>
+            </div>
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 cyber-grid">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 cyber-grid relative">
           {scanlineEnabled && <div className="scanline fixed inset-0 pointer-events-none z-50" />}
           {children}
+          <IncomingCallModal />
         </main>
       </div>
     </div>
