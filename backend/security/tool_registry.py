@@ -1,5 +1,4 @@
 """Registry of all 70+ whitelisted security tools across 10 categories."""
-
 TOOL_REGISTRY = {
     "information_gathering": {
         "label": "Information Gathering",
@@ -42,8 +41,6 @@ TOOL_REGISTRY = {
         "tools": ["htop", "btop", "iptables", "fail2ban", "lynis", "rkhunter", "chkrootkit", "ping", "curl", "smbclient", "enum4linux", "dnsrecon"],
     },
 }
-
-
 def get_all_tools() -> set[str]:
     """Return a flat set of all tool names."""
     tools = set()

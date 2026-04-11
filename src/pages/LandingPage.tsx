@@ -1,27 +1,24 @@
 import { Link } from "react-router-dom";
-import { Shield, Bot, Terminal, BarChart3, Users, Zap, Globe, Code, Network, Lock, Server, Cpu } from "lucide-react";
-import kelvyLogo from "@/assets/kelvy-logo.png";
+import { Shield, Bot, BarChart3, Users, Network, Server, FileText, Code } from "lucide-react";
+import EnhancedAIChat from "@/components/EnhancedAIChat";
+import ThreeScene from "@/components/ThreeScene";
 
 const features = [
-  { icon: Shield, title: "Security Operations", desc: "70+ Linux security tools with AI-powered analysis. Nmap, SQLMap, Metasploit, and more.", color: "text-red-400" },
-  { icon: Bot, title: "AI Assistant", desc: "Private, local AI powered by Ollama. Code review, threat analysis, document summarization.", color: "text-purple-400" },
-  { icon: Terminal, title: "Linux Tools Hub", desc: "Execute security tools directly from the dashboard. Cross-platform with Docker fallback.", color: "text-green-400" },
-  { icon: Users, title: "CRM System", desc: "Full customer management with pipeline tracking, M-Pesa integration, and client portal.", color: "text-blue-400" },
-  { icon: BarChart3, title: "Business Analytics", desc: "Real-time dashboards with AI-narrated insights. Revenue, security, and operations metrics.", color: "text-yellow-400" },
-  { icon: Code, title: "Cloud IDE", desc: "Browser-based development environment with AI code assistant and Git integration.", color: "text-cyan-400" },
-  { icon: Network, title: "Network Hub", desc: "Real-time network topology, device discovery, bandwidth monitoring, and VPN management.", color: "text-orange-400" },
-  { icon: Zap, title: "Automation Engine", desc: "Scheduled tasks, workflow automation, and event-driven triggers that run your system.", color: "text-pink-400" },
-  { icon: Lock, title: "RBAC Security", desc: "Role-based access control with 6 roles, audit logging, and zero-trust architecture.", color: "text-emerald-400" },
-  { icon: Server, title: "ERP System", desc: "Finance, invoicing, expense tracking, and M-Pesa payment processing for Kenya.", color: "text-amber-400" },
-  { icon: Globe, title: "Client Portal", desc: "Secure portal for clients to track projects, tickets, invoices, and communicate.", color: "text-teal-400" },
-  { icon: Cpu, title: "ITSM Ticketing", desc: "Support ticket system with SLA tracking, AI-suggested resolutions, and knowledge base.", color: "text-indigo-400" },
+  { icon: Shield, title: "Cybersecurity", desc: "Threat detection, SOC, SIEM, vulnerability scanning, incident response" },
+  { icon: Network, title: "Networking", desc: "Infrastructure monitoring, device discovery, bandwidth analysis, VPN management" },
+  { icon: Server, title: "Cloud Security", desc: "AWS, Azure, GCP security posture, compliance monitoring, cloud access management" },
+  { icon: FileText, title: "Compliance", desc: "GDPR, ISO27001, Kenya DPA compliance tracking, audit reports, risk assessments" },
+  { icon: BarChart3, title: "Business Continuity", desc: "DRP, BCP planning, disaster recovery testing, backup management" },
+  { icon: Users, title: "E-Sign & Referral", desc: "Digital contracts, electronic signatures, referral tracking, commission management" },
+  { icon: Bot, title: "AI/ML Center", desc: "Chat, analytics, predictions, automated reporting, intelligent insights" },
+  { icon: Code, title: "Training Hub", desc: "Security awareness training, certifications, compliance courses, knowledge base" },
 ];
 
 const stats = [
-  { value: "70+", label: "Security Tools" },
-  { value: "12", label: "Core Modules" },
+  { value: "8", label: "Core Domains" },
   { value: "100%", label: "Local AI" },
-  { value: "$0", label: "To Start" },
+  { value: "KES 0", label: "To Start" },
+  { value: "24/7", label: "Support" },
 ];
 
 export default function LandingPage() {
@@ -32,14 +29,14 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
+              🛡️
             </div>
             <span className="font-display text-sm font-bold text-primary">KELVY CYBERTECH HUB</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link to="/auth" className="px-4 py-1.5 rounded-lg border border-border text-xs font-mono text-muted-foreground hover:text-foreground transition">
-              Sign In
-            </Link>
+            <a href="https://wa.me/254787730624?text=Hello,%20I%20need%20help%20with%20Kelvy%20CyberTech%20Hub" target="_blank" rel="noopener noreferrer" className="px-4 py-1.5 rounded-lg border border-border text-xs font-mono text-muted-foreground hover:text-foreground transition">
+              📞 Contact Us
+            </a>
             <Link to="/auth" className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-mono font-bold hover:opacity-90 transition">
               Get Started
             </Link>
@@ -52,14 +49,13 @@ export default function LandingPage() {
         <div className="absolute inset-0 cyber-grid opacity-30" />
         <div className="max-w-6xl mx-auto px-4 py-20 md:py-32 text-center relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[10px] font-mono mb-6 tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> AI-POWERED • OFFLINE-FIRST • ENTERPRISE READY
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> AI-POWERED • LOCAL • ENTERPRISE READY
           </div>
           <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 text-glow-green">
-            <span className="text-primary">KELVY</span> CYBERTECH HUB
+            <span className="text-primary">KELVY CYBERTECH HUB</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 font-body">
-            The unified AI-powered command center for cybersecurity, business operations, and enterprise computing.
-            All fields of computing — one platform.
+            AI-Powered Enterprise Security Platform for Kenyan Businesses. All domains of computing — one unified platform.
           </p>
           <div className="flex items-center justify-center gap-4 mb-12">
             <Link to="/auth" className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-mono text-sm font-bold hover:opacity-90 transition glow-border">
@@ -82,20 +78,63 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] items-center">
+          <div className="space-y-5">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-[10px] font-mono tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> 3D SECURITY VISUALIZATION
+            </span>
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">Realtime topology and threat signal awareness</h2>
+            <p className="text-sm text-muted-foreground max-w-xl leading-7">
+              Explore a live interactive 3D model of your enterprise security posture. See attack surface, risk signals, and AI-driven response flows.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                "Local AI, local control",
+                "KES-native security metrics",
+                "Role-based team approvals",
+                "Enterprise-ready operations"
+              ].map(item => (
+                <div key={item} className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">{item}</div>
+              ))}
+            </div>
+          </div>
+          <div className="glass rounded-3xl border border-border p-4">
+            <ThreeScene />
+          </div>
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="max-w-6xl mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">Enterprise Modules</h2>
-          <p className="text-sm text-muted-foreground font-mono">Every field of computing. One unified platform.</p>
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">Enterprise Domains</h2>
+          <p className="text-sm text-muted-foreground font-mono">Complete cybersecurity and business solutions</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {features.map(f => (
             <div key={f.title} className="glass rounded-xl p-5 hover:border-primary/30 transition group">
-              <f.icon className={`w-8 h-8 ${f.color} mb-3 group-hover:scale-110 transition`} />
+              <f.icon className={`w-8 h-8 text-primary mb-3 group-hover:scale-110 transition`} />
               <h3 className="font-display text-sm font-bold text-foreground mb-1">{f.title}</h3>
               <p className="text-xs text-muted-foreground leading-relaxed">{f.desc}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* AI Chat Section */}
+      <section className="max-w-6xl mx-auto px-4 py-16">
+        <div className="text-center mb-12">
+          <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">Try Our AI Assistant</h2>
+          <p className="text-sm text-muted-foreground font-mono">Ask anything - completely free, no limits, powered by local Ollama AI</p>
+        </div>
+        <div className="max-w-4xl mx-auto">
+          <EnhancedAIChat
+            storageKey="kelvy-public-chat"
+            title="Kelvy Security AI"
+            systemPrompt="You are the Kelvy CyberTech Hub AI assistant — expert in cybersecurity, networking, cloud security, Kenya Data Protection Act, GDPR, ISO 27001, business continuity, and enterprise IT. Provide helpful, accurate, professional answers."
+            className="min-h-[520px]"
+          />
         </div>
       </section>
 

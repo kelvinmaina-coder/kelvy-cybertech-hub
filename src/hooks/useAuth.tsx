@@ -21,7 +21,7 @@ interface AuthContextType {
   roles: AppRole[];
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string, fullName: string, phone?: string, company?: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, fullName: string, phone?: string, company?: string, role?: AppRole) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   hasRole: (role: AppRole) => boolean;
   hasAnyRole: (roles: AppRole[]) => boolean;
@@ -86,8 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signUp = async (email: string, password: string, fullName: string, phone?: string, company?: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, fullName: string, phone?: string, company?: string, role: AppRole = 'client') => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -95,7 +95,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         emailRedirectTo: window.location.origin,
       },
     });
-    return { error: error?.message ?? null };
+
+    if (error) return { error: error.message };
+
+    // If signup successful, create profile and role
+    if (data.user) {
+      const approved = role === 'client'; // Auto-approve clients
+
+      // Insert profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          full_name: fullName,
+          phone,
+          company,
+          approved,
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        return { error: 'Account created but profile setup failed. Please contact support.' };
+      }
+
+      // Insert role
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .insert({
+          user_id: data.user.id,
+          role,
+        });
+
+      if (roleError) {
+        console.error('Role assignment error:', roleError);
+        return { error: 'Account created but role assignment failed. Please contact support.' };
+      }
+    }
+
+    return { error: null };
   };
 
   const signOut = async () => {

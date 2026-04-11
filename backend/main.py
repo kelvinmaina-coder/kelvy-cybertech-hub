@@ -3,7 +3,6 @@ import uvicorn
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-
 # Import routers
 from api.tools import router as tools_router
 from api.ai import router as ai_router
@@ -17,10 +16,8 @@ from crm.api import router as crm_router
 from itsm.api import router as itsm_router
 from auth.api import router as auth_router
 from business.api import router as business_router
-
 # Import scheduler
 from automation.scheduler import scheduler
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
@@ -32,14 +29,12 @@ async def lifespan(app: FastAPI):
     print("Stopping automation scheduler...")
     await scheduler.stop()
     print("Automation scheduler stopped")
-
 app = FastAPI(
     title="Kelvy CyberTech Hub API",
     description="AI-Powered Enterprise Computing Platform Backend",
     version="1.0.0",
     lifespan=lifespan
 )
-
 # CORS
 app.add_middleware(
     CORSMiddleware,
@@ -48,7 +43,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # Mount routers
 app.include_router(tools_router, prefix="/api/security", tags=["Security Tools"])
 app.include_router(ai_router, prefix="/api/ollama", tags=["Ollama AI"])
@@ -62,7 +56,6 @@ app.include_router(crm_router, prefix="/api/crm", tags=["CRM"])
 app.include_router(itsm_router, prefix="/api/itsm", tags=["ITSM"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(business_router, prefix="/api/business", tags=["Business"])
-
 @app.get("/health")
 async def health():
     import httpx
@@ -74,7 +67,6 @@ async def health():
     except Exception:
         pass
     return {"status": "online", "ollama": ollama_ok, "version": "1.0.0"}
-
 @app.get("/")
 async def root():
     return {
@@ -94,6 +86,5 @@ async def root():
             "/api/auth/security-status"
         ]
     }
-
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

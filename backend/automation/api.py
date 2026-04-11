@@ -1,18 +1,14 @@
-﻿from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
-from supabase import create_client
+from supabase_client import supabase
 import os
 import json
-
 router = APIRouter()
-
 # Supabase configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL", "https://nelcuoiygfydfokxvjss.supabase.co")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "sb_publishable_1pNxe4keLc7fksoIW87fRg_7pw2xY-6")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
 class TaskCreate(BaseModel):
     name: str
     description: Optional[str] = None
@@ -20,14 +16,12 @@ class TaskCreate(BaseModel):
     schedule_type: str
     schedule_value: str
     config: Optional[Dict] = None
-
 class TaskUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     enabled: Optional[bool] = None
     config: Optional[Dict] = None
     schedule_value: Optional[str] = None
-
 @router.get("/tasks")
 async def get_tasks():
     """Get all automation tasks"""
@@ -36,7 +30,6 @@ async def get_tasks():
         return {"success": True, "data": response.data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/tasks/{task_id}")
 async def get_task(task_id: int):
     """Get a specific task"""
@@ -45,7 +38,6 @@ async def get_task(task_id: int):
         return {"success": True, "data": response.data}
     except Exception as e:
         raise HTTPException(status_code=404, detail="Task not found")
-
 @router.post("/tasks")
 async def create_task(task: TaskCreate):
     """Create a new automation task"""
@@ -54,7 +46,6 @@ async def create_task(task: TaskCreate):
         return {"success": True, "data": response.data[0] if response.data else None}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.put("/tasks/{task_id}")
 async def update_task(task_id: int, task: TaskUpdate):
     """Update an automation task"""
@@ -64,7 +55,6 @@ async def update_task(task_id: int, task: TaskUpdate):
         return {"success": True, "data": response.data[0] if response.data else None}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.delete("/tasks/{task_id}")
 async def delete_task(task_id: int):
     """Delete an automation task"""
@@ -73,7 +63,6 @@ async def delete_task(task_id: int):
         return {"success": True, "message": "Task deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/tasks/{task_id}/run")
 async def run_task_now(task_id: int):
     """Run a task immediately"""
@@ -88,23 +77,19 @@ async def run_task_now(task_id: int):
         raise HTTPException(status_code=404, detail="Task not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/logs")
 async def get_logs(limit: int = 100, offset: int = 0, task_id: Optional[int] = None, status: Optional[str] = None):
     """Get automation logs with filtering"""
     try:
         query = supabase.table("automation_logs").select("*").order("created_at", desc=True)
-        
         if task_id:
             query = query.eq("task_id", task_id)
         if status:
             query = query.eq("status", status)
-        
         response = query.range(offset, offset + limit - 1).execute()
         return {"success": True, "data": response.data, "total": len(response.data)}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/logs/{log_id}")
 async def get_log(log_id: int):
     """Get a specific log entry"""
@@ -113,7 +98,6 @@ async def get_log(log_id: int):
         return {"success": True, "data": response.data}
     except Exception as e:
         raise HTTPException(status_code=404, detail="Log not found")
-
 @router.get("/stats")
 async def get_stats():
     """Get automation statistics"""
@@ -121,34 +105,27 @@ async def get_stats():
         # Get tasks
         tasks_response = supabase.table("automation_tasks").select("*").execute()
         tasks = tasks_response.data
-        
         # Get logs
         logs_response = supabase.table("automation_logs").select("*").execute()
         logs = logs_response.data
-        
         # Calculate statistics
         total_tasks = len(tasks)
         enabled_tasks = len([t for t in tasks if t.get("enabled")])
-        
         total_executions = len(logs)
         success_count = len([l for l in logs if l.get("status") == "success"])
         failed_count = len([l for l in logs if l.get("status") == "failed"])
         running_count = len([l for l in logs if l.get("status") == "running"])
-        
         # Calculate success rate
         completed = success_count + failed_count
         success_rate = (success_count / completed * 100) if completed > 0 else 0
-        
         # Calculate average duration
         durations = [l.get("duration_ms", 0) for l in logs if l.get("duration_ms")]
         avg_duration_ms = sum(durations) / len(durations) if durations else 0
-        
         # Task type distribution
         task_distribution = {}
         for task in tasks:
             task_type = task.get("task_type", "unknown")
             task_distribution[task_type] = task_distribution.get(task_type, 0) + 1
-        
         # Last 7 days execution trend
         last_7_days = []
         for i in range(7):
@@ -161,7 +138,6 @@ async def get_stats():
                 "success": len([l for l in day_logs if l.get("status") == "success"]),
                 "failed": len([l for l in day_logs if l.get("status") == "failed"])
             })
-        
         return {
             "success": True,
             "data": {
@@ -179,7 +155,6 @@ async def get_stats():
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/task-types")
 async def get_task_types():
     """Get available task types and their schemas"""
@@ -260,7 +235,6 @@ async def get_task_types():
             ]
         }
     }
-
 @router.post("/validate-cron")
 async def validate_cron(cron_expression: str):
     """Validate a cron expression"""

@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import subprocess
 import asyncio
@@ -8,9 +8,7 @@ from typing import Optional, List, Dict, Any
 from pathlib import Path
 import shutil
 from datetime import datetime
-
 router = APIRouter()
-
 # Base directory for IDE workspace (project root)
 WORKSPACE_ROOT = os.getenv("IDE_WORKSPACE", os.getcwd())
 ALLOWED_EXTENSIONS = [
@@ -19,17 +17,14 @@ ALLOWED_EXTENSIONS = [
     '.sh', '.bash', '.zsh', '.ps1', '.go', '.rs', '.java', '.c', '.cpp',
     '.h', '.hpp', '.php', '.sql', '.vue', '.svelte', '.xml', '.svg'
 ]
-
 class FileOperation(BaseModel):
     path: str
     content: Optional[str] = None
     new_name: Optional[str] = None
-
 class CreateFile(BaseModel):
     path: str
     content: str = ""
     is_directory: bool = False
-
 @router.get("/files")
 async def list_files(path: str = ""):
     """List files and directories in the workspace"""
@@ -37,7 +32,6 @@ async def list_files(path: str = ""):
         full_path = Path(WORKSPACE_ROOT) / path
         if not full_path.exists():
             raise HTTPException(status_code=404, detail="Path not found")
-        
         items = []
         for item in full_path.iterdir():
             # Skip hidden files and node_modules, .git
@@ -45,7 +39,6 @@ async def list_files(path: str = ""):
                 continue
             if item.name in ['node_modules', '__pycache__', '.git', 'venv', 'env']:
                 continue
-            
             items.append({
                 "name": item.name,
                 "path": str(item.relative_to(WORKSPACE_ROOT)),
@@ -54,13 +47,11 @@ async def list_files(path: str = ""):
                 "modified": datetime.fromtimestamp(item.stat().st_mtime).isoformat(),
                 "extension": item.suffix if item.is_file() else None
             })
-        
         # Sort: directories first, then files
         items.sort(key=lambda x: (not x["is_directory"], x["name"].lower()))
         return {"success": True, "data": items, "current_path": path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.get("/file")
 async def read_file(path: str):
     """Read a file's content"""
@@ -68,17 +59,13 @@ async def read_file(path: str):
         full_path = Path(WORKSPACE_ROOT) / path
         if not full_path.exists():
             raise HTTPException(status_code=404, detail="File not found")
-        
         if full_path.is_dir():
             raise HTTPException(status_code=400, detail="Cannot read directory")
-        
         # Check if file is text-based
         if full_path.suffix not in ALLOWED_EXTENSIONS:
             return {"success": True, "data": {"content": "[Binary file - cannot display]", "is_binary": True}}
-        
         with open(full_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        
         return {
             "success": True,
             "data": {
@@ -93,19 +80,15 @@ async def read_file(path: str):
         return {"success": True, "data": {"content": "[Binary file - cannot display]", "is_binary": True}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/file")
 async def write_file(operation: FileOperation):
     """Create or update a file"""
     try:
         full_path = Path(WORKSPACE_ROOT) / operation.path
-        
         # Create parent directories if needed
         full_path.parent.mkdir(parents=True, exist_ok=True)
-        
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(operation.content or "")
-        
         return {
             "success": True,
             "message": f"File saved: {operation.path}",
@@ -117,7 +100,6 @@ async def write_file(operation: FileOperation):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.delete("/file")
 async def delete_file(path: str):
     """Delete a file or directory"""
@@ -125,16 +107,13 @@ async def delete_file(path: str):
         full_path = Path(WORKSPACE_ROOT) / path
         if not full_path.exists():
             raise HTTPException(status_code=404, detail="Path not found")
-        
         if full_path.is_dir():
             shutil.rmtree(full_path)
         else:
             full_path.unlink()
-        
         return {"success": True, "message": f"Deleted: {path}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/mkdir")
 async def create_directory(operation: CreateFile):
     """Create a new directory"""
@@ -144,28 +123,23 @@ async def create_directory(operation: CreateFile):
         return {"success": True, "message": f"Directory created: {operation.path}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/rename")
 async def rename_file(operation: FileOperation):
     """Rename a file or directory"""
     try:
         old_path = Path(WORKSPACE_ROOT) / operation.path
         new_path = Path(WORKSPACE_ROOT) / operation.new_name
-        
         if not old_path.exists():
             raise HTTPException(status_code=404, detail="Source not found")
-        
         old_path.rename(new_path)
         return {"success": True, "message": f"Renamed to: {operation.new_name}"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 @router.post("/run-command")
 async def run_command(command: str, working_dir: str = "."):
     """Execute a terminal command and return output"""
     try:
         full_working_dir = Path(WORKSPACE_ROOT) / working_dir
-        
         result = subprocess.run(
             command,
             shell=True,
@@ -175,7 +149,6 @@ async def run_command(command: str, working_dir: str = "."):
             cwd=str(full_working_dir),
             executable="/bin/bash" if os.name != "nt" else None
         )
-        
         return {
             "success": True,
             "output": result.stdout if result.stdout else result.stderr,
@@ -193,7 +166,6 @@ async def run_command(command: str, working_dir: str = "."):
             "output": str(e),
             "exit_code": -1
         }
-
 @router.get("/languages")
 async def get_languages():
     """Get supported languages and their configurations"""
@@ -201,7 +173,6 @@ async def get_languages():
         "success": True,
         "data": LANGUAGES
     }
-
 def get_language_from_extension(ext: str) -> str:
     """Get language ID from file extension"""
     ext = ext.lower()
@@ -209,7 +180,6 @@ def get_language_from_extension(ext: str) -> str:
         if ext in config.get("extensions", []):
             return lang_id
     return "plaintext"
-
 LANGUAGES = {
     "python": {
         "name": "Python",
@@ -334,9 +304,7 @@ import threading
 import queue
 from fastapi import WebSocket, WebSocketDisconnect
 import logging
-
 logger = logging.getLogger(__name__)
-
 class TerminalSession:
     def __init__(self, websocket: WebSocket, working_dir: str = "."):
         self.websocket = websocket
@@ -344,17 +312,14 @@ class TerminalSession:
         self.process = None
         self.read_thread = None
         self.is_running = False
-    
     async def start(self):
         """Start a new terminal process"""
         self.is_running = True
-        
         # Use appropriate shell based on OS
         if os.name == "nt":  # Windows
             shell_cmd = ["cmd.exe"]
         else:  # Linux/Mac
             shell_cmd = ["/bin/bash"]
-        
         try:
             self.process = subprocess.Popen(
                 shell_cmd,
@@ -366,16 +331,12 @@ class TerminalSession:
                 bufsize=1,
                 universal_newlines=True
             )
-            
             # Start reading output in background
             self.read_thread = threading.Thread(target=self.read_output, daemon=True)
             self.read_thread.start()
-            
             await self.websocket.send_json({"type": "ready", "message": "Terminal ready"})
-            
         except Exception as e:
             await self.websocket.send_json({"type": "error", "message": str(e)})
-    
     def read_output(self):
         """Read terminal output and send to websocket"""
         while self.is_running and self.process and self.process.stdout:
@@ -388,14 +349,12 @@ class TerminalSession:
             except Exception as e:
                 asyncio.run(self.send_output(f"\r\nError: {e}\r\n"))
                 break
-    
     async def send_output(self, output: str):
         """Send output to websocket"""
         try:
             await self.websocket.send_json({"type": "output", "data": output})
         except:
             pass
-    
     async def write(self, data: str):
         """Write to terminal input"""
         if self.process and self.process.stdin:
@@ -404,7 +363,6 @@ class TerminalSession:
                 self.process.stdin.flush()
             except Exception as e:
                 await self.websocket.send_json({"type": "error", "message": str(e)})
-    
     async def resize(self, rows: int, cols: int):
         """Resize terminal (optional)"""
         if os.name != "nt" and self.process:
@@ -416,7 +374,6 @@ class TerminalSession:
                            struct.pack("HHHH", rows, cols, 0, 0))
             except:
                 pass
-    
     async def stop(self):
         """Stop the terminal process"""
         self.is_running = False
@@ -426,35 +383,27 @@ class TerminalSession:
                 self.process.wait(timeout=5)
             except subprocess.TimeoutExpired:
                 self.process.kill()
-
 # Store active terminal sessions
 active_terminals = {}
-
 @router.websocket("/ws/terminal/{session_id}")
 async def terminal_websocket(websocket: WebSocket, session_id: str):
     """WebSocket endpoint for terminal sessions"""
     await websocket.accept()
-    
     # Get working directory from query params
     query_params = websocket.query_params
     working_dir = query_params.get("working_dir", ".")
-    
     terminal = TerminalSession(websocket, working_dir)
     active_terminals[session_id] = terminal
-    
     await terminal.start()
-    
     try:
         while True:
             data = await websocket.receive_json()
-            
             if data.get("type") == "input":
                 await terminal.write(data.get("data", ""))
             elif data.get("type") == "resize":
                 await terminal.resize(data.get("rows", 24), data.get("cols", 80))
             elif data.get("type") == "stop":
                 break
-                
     except WebSocketDisconnect:
         pass
     finally:

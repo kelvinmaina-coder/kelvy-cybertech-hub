@@ -7,9 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import os
-
 router = APIRouter()
-
 # Tool definitions with real commands
 TOOLS = {
     # CATEGORY 1: Information Gathering (11 tools)
@@ -25,7 +23,6 @@ TOOLS = {
     "subfinder": {"command": "subfinder", "category": "Information Gathering", "description": "Fast subdomain discovery", "options": ["-d", "-v"]},
     "dnsx": {"command": "dnsx", "category": "Information Gathering", "description": "DNS toolkit for bulk queries", "options": ["-d", "-resp"]},
     "dnsrecon": {"command": "dnsrecon", "category": "Information Gathering", "description": "DNS enumeration", "options": ["-d", "-t std"]},
-
     # CATEGORY 2: Network Analysis (11 tools)
     "wireshark": {"command": "wireshark", "category": "Network Analysis", "description": "Packet capture and analysis", "options": ["-h"]},
     "tshark": {"command": "tshark", "category": "Network Analysis", "description": "Command-line packet analyzer", "options": ["-i", "-f", "-w"]},
@@ -40,7 +37,6 @@ TOOLS = {
     "netstat": {"command": "netstat", "category": "Network Analysis", "description": "Network statistics and connections", "options": ["-an", "-tuln"]},
     "smbclient": {"command": "smbclient", "category": "Network Analysis", "description": "SMB/CIFS client", "options": ["-L", "-U"]},
     "enum4linux": {"command": "enum4linux", "category": "Network Analysis", "description": "Linux enumeration of Windows systems", "options": ["-a", "-u"]},
-
     # CATEGORY 3: Vulnerability Scanning (11 tools)
     "nikto": {"command": "nikto", "category": "Vulnerability Scanning", "description": "Web server vulnerability scanner", "options": ["-h"]},
     "openvas": {"command": "openvas", "category": "Vulnerability Scanning", "description": "Vulnerability assessment", "options": ["-V"]},
@@ -53,7 +49,6 @@ TOOLS = {
     "dirb": {"command": "dirb", "category": "Vulnerability Scanning", "description": "Web content scanner", "options": ["-h"]},
     "wfuzz": {"command": "wfuzz", "category": "Vulnerability Scanning", "description": "Web fuzzer", "options": ["-u", "-z"]},
     "commix": {"command": "commix", "category": "Vulnerability Scanning", "description": "Command injection exploiter", "options": ["--url", "--batch"]},
-
     # CATEGORY 4: Password & Authentication (7 tools)
     "hydra": {"command": "hydra", "category": "Password Attacks", "description": "Fast login cracker", "options": ["-l", "-P", "-t 4"]},
     "john": {"command": "john", "category": "Password Attacks", "description": "John the Ripper password cracker", "options": ["--wordlist="]},
@@ -62,14 +57,12 @@ TOOLS = {
     "medusa": {"command": "medusa", "category": "Password Attacks", "description": "Parallel password cracker", "options": ["-h", "-u", "-P"]},
     "patator": {"command": "patator", "category": "Password Attacks", "description": "Multi-purpose brute-forcer", "options": ["--help"]},
     "cewl": {"command": "cewl", "category": "Password Attacks", "description": "Custom wordlist generator", "options": ["-w", "-d"]},
-
     # CATEGORY 5: Exploitation & Post-Exploitation (5 tools)
     "metasploit": {"command": "msfconsole", "category": "Exploitation", "description": "Exploit framework", "options": ["-q", "-x"]},
     "msfvenom": {"command": "msfvenom", "category": "Exploitation", "description": "Payload generator", "options": ["-p", "-f"]},
     "beef": {"command": "beef", "category": "Exploitation", "description": "Browser exploitation framework", "options": ["--help"]},
     "exploit-db": {"command": "searchsploit", "category": "Exploitation", "description": "Exploit database search", "options": ["-w"]},
     "searchsploit": {"command": "searchsploit", "category": "Exploitation", "description": "Local exploit-db search", "options": ["-t"]},
-
     # CATEGORY 6: Digital Forensics & Analysis (8 tools)
     "autopsy": {"command": "autopsy", "category": "Forensics", "description": "Digital forensics platform", "options": ["--help"]},
     "volatility": {"command": "volatility", "category": "Forensics", "description": "Memory forensics framework", "options": ["-f", "--profile"]},
@@ -80,26 +73,22 @@ TOOLS = {
     "exiftool": {"command": "exiftool", "category": "Forensics", "description": "Metadata extractor", "options": ["-h"]},
     "steghide": {"command": "steghide", "category": "Forensics", "description": "Steganography tool", "options": ["extract", "-sf"]},
     "stegcracker": {"command": "stegcracker", "category": "Forensics", "description": "Steganography brute-force", "options": ["--help"]},
-
     # CATEGORY 7: Web Application Testing (6 tools)
     "burpsuite": {"command": "burpsuite", "category": "Web Application", "description": "Web security testing", "options": ["--help"]},
     "zaproxy": {"command": "zaproxy", "category": "Web Application", "description": "OWASP ZAP web scanner", "options": ["-cmd"]},
     "arjun": {"command": "arjun", "category": "Web Application", "description": "HTTP parameter discovery", "options": ["-u"]},
     "dalfox": {"command": "dalfox", "category": "Web Application", "description": "XSS scanner", "options": ["url"]},
-
     # CATEGORY 8: Wireless Testing (5 tools)
     "aircrack-ng": {"command": "aircrack-ng", "category": "Wireless", "description": "WiFi security auditing", "options": ["-a"]},
     "airmon-ng": {"command": "airmon-ng", "category": "Wireless", "description": "Monitor mode manager", "options": ["start", "stop"]},
     "airodump-ng": {"command": "airodump-ng", "category": "Wireless", "description": "Wireless packet capture", "options": ["--interface"]},
     "reaver": {"command": "reaver", "category": "Wireless", "description": "WPS brute force attack", "options": ["-i", "-b"]},
     "wifite": {"command": "wifite", "category": "Wireless", "description": "Automated wireless auditor", "options": ["--kill"]},
-
     # CATEGORY 9: Cryptography & Encoding (6 tools)
     "openssl": {"command": "openssl", "category": "Cryptography", "description": "Cryptography toolkit", "options": ["genrsa", "aes-256-cbc"]},
     "gpg": {"command": "gpg", "category": "Cryptography", "description": "GNU Privacy Guard", "options": ["--encrypt", "--decrypt"]},
     "base64": {"command": "base64", "category": "Cryptography", "description": "Encoding/decoding", "options": ["-d"]},
     "xxd": {"command": "xxd", "category": "Cryptography", "description": "Hex dump creator", "options": ["-p", "-r"]},
-
     # CATEGORY 10: System & Network Administration (7 tools)
     "htop": {"command": "htop", "category": "System Security", "description": "System resource monitor", "options": ["--help"]},
     "btop": {"command": "btop", "category": "System Security", "description": "System resource monitor", "options": ["--help"]},
@@ -110,34 +99,26 @@ TOOLS = {
     "ping": {"command": "ping", "category": "Network Analysis", "description": "Connectivity test", "options": ["-c 4"]},
     "curl": {"command": "curl", "category": "Network Analysis", "description": "Data transfer tool", "options": ["-I", "-v"]}
 }
-
-
 class ToolRequest(BaseModel):
     tool: str
     target: str
     options: Optional[str] = None
-
 class AIAnalysisRequest(BaseModel):
     tool: str
     output: str
-
 async def analyze_with_ollama(tool: str, output: str) -> Dict[str, Any]:
     """Send tool output to Ollama for AI analysis"""
     prompt = f"""
 Analyze this security tool output from '{tool}'. Provide:
-
 1. SUMMARY: What was found (2-3 sentences)
 2. SEVERITY: Critical/High/Medium/Low/Info
 3. FINDINGS: List key findings (bullet points)
 4. RECOMMENDATIONS: Actionable next steps
-
 Tool Output:
 {output[:3000]}
-
 Respond in JSON format:
 {{"summary": "...", "severity": "...", "findings": ["..."], "recommendations": ["..."]}}
 """
-    
     try:
         async with httpx.AsyncClient(timeout=60) as client:
             response = await client.post(
@@ -166,24 +147,18 @@ Respond in JSON format:
             "findings": ["Ollama may not be running"],
             "recommendations": ["Start Ollama with: ollama serve", "Pull model: ollama pull qwen2.5:7b"]
         }
-
 def execute_tool(tool: str, target: str, options: str = "") -> Dict[str, Any]:
     """Execute a real system tool"""
     tool_info = TOOLS.get(tool)
     if not tool_info:
         return {"error": f"Tool '{tool}' not found", "output": "", "success": False}
-    
     # Build the command
     cmd_parts = [tool_info["command"]]
-    
     if options:
         cmd_parts.append(options)
-    
     if target and target != "default":
         cmd_parts.append(target)
-    
     command = " ".join(cmd_parts)
-    
     try:
         # Execute the command with timeout
         result = subprocess.run(
@@ -194,11 +169,9 @@ def execute_tool(tool: str, target: str, options: str = "") -> Dict[str, Any]:
             timeout=30,
             executable="/bin/bash" if os.name != "nt" else None
         )
-        
         output = result.stdout if result.stdout else result.stderr
         if not output:
             output = "Command executed but produced no output"
-        
         return {
             "success": True,
             "output": output[:5000],  # Limit output size
@@ -219,19 +192,16 @@ def execute_tool(tool: str, target: str, options: str = "") -> Dict[str, Any]:
             "command": command,
             "error": str(e)
         }
-
 @router.post("/run-tool")
 async def run_tool(request: ToolRequest):
     """Run a security tool and return output"""
     result = execute_tool(request.tool, request.target, request.options)
     return result
-
 @router.post("/analyze")
 async def analyze_output(request: AIAnalysisRequest):
     """Analyze tool output with Ollama AI"""
     analysis = await analyze_with_ollama(request.tool, request.output)
     return analysis
-
 @router.get("/tools")
 async def get_tools():
     """Get all available tools grouped by category"""
@@ -246,7 +216,6 @@ async def get_tools():
             "options": info.get("options", [])
         })
     return categories
-
 @router.get("/check-ollama")
 async def check_ollama():
     """Check if Ollama is running"""

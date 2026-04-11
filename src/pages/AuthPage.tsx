@@ -167,7 +167,7 @@ function LoginForm() {
 
 function RegisterForm() {
   const { signUp } = useAuth();
-  const [form, setForm] = useState({ fullName: "", email: "", phone: "", company: "", password: "", confirmPassword: "" });
+  const [form, setForm] = useState({ fullName: "", email: "", phone: "", company: "", password: "", confirmPassword: "", role: "client" });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -184,11 +184,15 @@ function RegisterForm() {
       return;
     }
     setLoading(true);
-    const { error } = await signUp(form.email, form.password, form.fullName, form.phone, form.company);
+    const { error } = await signUp(form.email, form.password, form.fullName, form.phone, form.company, form.role as any);
     if (error) {
       toast.error(error);
     } else {
-      toast.success("Account created! Check your email to verify your account.");
+      if (form.role === 'client') {
+        toast.success("Account created! You can now sign in.");
+      } else {
+        toast.success("Account created! Awaiting admin approval before you can sign in.");
+      }
     }
     setLoading(false);
   };
@@ -218,6 +222,16 @@ function RegisterForm() {
         </div>
       </div>
       <div>
+        <label className="text-xs text-muted-foreground font-mono mb-1 block">ROLE *</label>
+        <select value={form.role} onChange={e => update("role", e.target.value)} required
+          className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50 font-mono">
+          <option value="client">Client - Auto-approved</option>
+          <option value="manager">Manager - Requires approval</option>
+          <option value="security_analyst">Security Analyst - Requires approval</option>
+          <option value="technician">Technician - Requires approval</option>
+        </select>
+      </div>
+      <div>
         <label className="text-xs text-muted-foreground font-mono mb-1 block">PASSWORD *</label>
         <div className="relative">
           <input type={showPw ? "text" : "password"} value={form.password} onChange={e => update("password", e.target.value)} required
@@ -238,7 +252,7 @@ function RegisterForm() {
         {loading ? "CREATING ACCOUNT..." : "CREATE ACCOUNT"}
       </button>
       <p className="text-xs text-muted-foreground text-center font-mono">
-        Default role: CLIENT • Admin approval required for elevated access
+        {form.role === 'client' ? 'Client accounts are auto-approved' : 'Manager/Analyst/Technician accounts require admin approval'}
       </p>
     </form>
   );
