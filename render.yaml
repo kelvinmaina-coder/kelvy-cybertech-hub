@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kelvy-cybertech-hub
+    runtime: python
+    buildCommand: npm install && npm run build && pip install -r backend/requirements.txt
+    startCommand: cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT & npx serve dist -l 3000
+    envVars:
+      - key: SUPABASE_URL
+        value: https://nelcuoiygfydfokxvjss.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: sb_publishable_1pNxe4keLc7fksoIW87fRg_7pw2xY-6
