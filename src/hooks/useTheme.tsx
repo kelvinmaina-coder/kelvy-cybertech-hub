@@ -1,6 +1,17 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import type { ReactNode } from "react";
 
-export type ThemeName = "dark" | "cyberpunk" | "sunset" | "forest" | "ocean" | "royal" | "matrix";
+export type ThemeName =
+  | "dark"
+  | "light"
+  | "cyberpunk"
+  | "sunset"
+  | "forest"
+  | "ocean"
+  | "royal"
+  | "matrix"
+  | "midnight"
+  | "aurora";
 
 export interface Theme {
   id: ThemeName;
@@ -9,17 +20,20 @@ export interface Theme {
 }
 
 export const themes: Theme[] = [
-  { id: "dark", label: "Default Dark", accent: "#3b82f6" },
+  { id: "dark", label: "Dark", accent: "#3b82f6" },
+  { id: "light", label: "Light", accent: "#0ea5e9" },
   { id: "cyberpunk", label: "Cyberpunk", accent: "#ff00ff" },
-  { id: "sunset", label: "Sunset Glow", accent: "#f97316" },
-  { id: "forest", label: "Deep Forest", accent: "#22c55e" },
-  { id: "ocean", label: "Ocean Deep", accent: "#0ea5e9" },
-  { id: "royal", label: "Royal Purple", accent: "#a855f7" },
-  { id: "matrix", label: "Matrix Code", accent: "#00ff41" },
+  { id: "sunset", label: "Sunset", accent: "#f97316" },
+  { id: "forest", label: "Forest", accent: "#22c55e" },
+  { id: "ocean", label: "Ocean", accent: "#0ea5e9" },
+  { id: "royal", label: "Royal", accent: "#a855f7" },
+  { id: "matrix", label: "Matrix", accent: "#00ff41" },
+  { id: "midnight", label: "Midnight", accent: "#7c3aed" },
+  { id: "aurora", label: "Aurora", accent: "#38bdf8" },
 ];
 
 interface ThemeProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
   defaultTheme?: ThemeName;
   storageKey?: string;
 }
@@ -49,12 +63,23 @@ export function ThemeProvider({
     () => (localStorage.getItem(storageKey) as ThemeName) || defaultTheme
   );
   const [scanlineEnabled, setScanlineEnabled] = useState<boolean>(() => {
-    return localStorage.getItem("kelvy-scanline") !== "false"; // Default to true
+    return localStorage.getItem("kelvy-scanline") !== "false";
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
-    const allThemeClasses: ThemeName[] = ["dark", "cyberpunk", "sunset", "forest", "ocean", "royal", "matrix"];
+    const allThemeClasses: ThemeName[] = [
+      "dark",
+      "light",
+      "cyberpunk",
+      "sunset",
+      "forest",
+      "ocean",
+      "royal",
+      "matrix",
+      "midnight",
+      "aurora",
+    ];
     root.classList.remove(...allThemeClasses);
     root.classList.add(theme);
     root.setAttribute("data-theme", theme);

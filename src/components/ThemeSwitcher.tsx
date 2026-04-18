@@ -1,5 +1,5 @@
 ﻿import React, { useState } from 'react';
-import { Palette, Moon, Sun } from 'lucide-react';
+import { Palette, Moon, Sun, Sparkles, Cloud, Droplet, Crown, Code2 } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 export const ThemeSwitcher: React.FC = () => {
@@ -8,12 +8,15 @@ export const ThemeSwitcher: React.FC = () => {
 
   const options = [
     { name: 'Dark', value: 'dark', icon: <Moon className="w-4 h-4" /> },
-    { name: 'Cyberpunk', value: 'cyberpunk', icon: <Palette className="w-4 h-4" /> },
+    { name: 'Light', value: 'light', icon: <Sun className="w-4 h-4" /> },
+    { name: 'Cyberpunk', value: 'cyberpunk', icon: <Sparkles className="w-4 h-4" /> },
     { name: 'Sunset', value: 'sunset', icon: <Palette className="w-4 h-4" /> },
-    { name: 'Forest', value: 'forest', icon: <Palette className="w-4 h-4" /> },
-    { name: 'Ocean', value: 'ocean', icon: <Palette className="w-4 h-4" /> },
-    { name: 'Royal', value: 'royal', icon: <Palette className="w-4 h-4" /> },
-    { name: 'Matrix', value: 'matrix', icon: <Palette className="w-4 h-4" /> },
+    { name: 'Forest', value: 'forest', icon: <Droplet className="w-4 h-4" /> },
+    { name: 'Ocean', value: 'ocean', icon: <Cloud className="w-4 h-4" /> },
+    { name: 'Royal', value: 'royal', icon: <Crown className="w-4 h-4" /> },
+    { name: 'Matrix', value: 'matrix', icon: <Code2 className="w-4 h-4" /> },
+    { name: 'Midnight', value: 'midnight', icon: <Moon className="w-4 h-4" /> },
+    { name: 'Aurora', value: 'aurora', icon: <Sparkles className="w-4 h-4" /> },
   ];
 
   return (

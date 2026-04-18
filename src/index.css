@@ -253,6 +253,117 @@
     --glow-red: 0 0 20px hsla(0, 80%, 55%, 0.3);
     --glow-purple: 0 0 20px hsla(120, 50%, 55%, 0.3);
   }
+
+  /* Light / Frost */
+  [data-theme="light"] {
+    --background: 210 30% 98%;
+    --foreground: 215 20% 12%;
+    --card: 210 25% 96%;
+    --card-foreground: 215 20% 12%;
+    --popover: 210 25% 96%;
+    --popover-foreground: 215 20% 12%;
+    --primary: 210 90% 45%;
+    --primary-foreground: 210 30% 10%;
+    --secondary: 180 75% 45%;
+    --secondary-foreground: 210 30% 10%;
+    --muted: 210 20% 90%;
+    --muted-foreground: 215 15% 45%;
+    --accent: 320 75% 55%;
+    --accent-foreground: 210 30% 10%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 210 30% 10%;
+    --warning: 45 95% 55%;
+    --warning-foreground: 210 30% 10%;
+    --border: 210 15% 88%;
+    --input: 210 15% 94%;
+    --ring: 210 90% 45%;
+    --sidebar-background: 210 20% 96%;
+    --sidebar-foreground: 215 20% 12%;
+    --sidebar-primary: 210 90% 45%;
+    --sidebar-primary-foreground: 210 30% 10%;
+    --sidebar-accent: 210 15% 90%;
+    --sidebar-accent-foreground: 215 20% 12%;
+    --sidebar-border: 210 15% 90%;
+    --sidebar-ring: 210 90% 45%;
+    --glow-green: 0 0 20px hsla(210, 90%, 45%, 0.25);
+    --glow-cyan: 0 0 20px hsla(180, 75%, 45%, 0.25);
+    --glow-red: 0 0 20px hsla(0, 80%, 55%, 0.25);
+    --glow-purple: 0 0 20px hsla(320, 75%, 55%, 0.25);
+  }
+
+  /* Midnight / Deep Twilight */
+  [data-theme="midnight"] {
+    --background: 240 25% 8%;
+    --foreground: 220 20% 88%;
+    --card: 240 20% 12%;
+    --card-foreground: 220 20% 88%;
+    --popover: 240 20% 12%;
+    --popover-foreground: 220 20% 88%;
+    --primary: 215 75% 55%;
+    --primary-foreground: 240 25% 8%;
+    --secondary: 280 65% 55%;
+    --secondary-foreground: 240 25% 8%;
+    --muted: 240 20% 12%;
+    --muted-foreground: 220 15% 55%;
+    --accent: 180 80% 55%;
+    --accent-foreground: 240 25% 8%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 240 25% 8%;
+    --warning: 45 95% 55%;
+    --warning-foreground: 240 25% 8%;
+    --border: 240 18% 10%;
+    --input: 240 18% 14%;
+    --ring: 215 75% 55%;
+    --sidebar-background: 240 22% 7%;
+    --sidebar-foreground: 220 20% 88%;
+    --sidebar-primary: 215 75% 55%;
+    --sidebar-primary-foreground: 240 25% 8%;
+    --sidebar-accent: 240 18% 11%;
+    --sidebar-accent-foreground: 220 20% 88%;
+    --sidebar-border: 240 18% 12%;
+    --sidebar-ring: 215 75% 55%;
+    --glow-green: 0 0 20px hsla(215, 75%, 55%, 0.25);
+    --glow-cyan: 0 0 20px hsla(280, 65%, 55%, 0.25);
+    --glow-red: 0 0 20px hsla(0, 80%, 55%, 0.25);
+    --glow-purple: 0 0 20px hsla(180, 80%, 55%, 0.25);
+  }
+
+  /* Aurora / Polar Lights */
+  [data-theme="aurora"] {
+    --background: 180 30% 8%;
+    --foreground: 190 25% 92%;
+    --card: 180 25% 12%;
+    --card-foreground: 190 25% 92%;
+    --popover: 180 25% 12%;
+    --popover-foreground: 190 25% 92%;
+    --primary: 175 80% 55%;
+    --primary-foreground: 180 30% 8%;
+    --secondary: 220 70% 55%;
+    --secondary-foreground: 180 30% 8%;
+    --muted: 180 20% 14%;
+    --muted-foreground: 190 18% 55%;
+    --accent: 300 70% 60%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 210 40% 98%;
+    --warning: 45 90% 55%;
+    --warning-foreground: 180 30% 8%;
+    --border: 180 18% 12%;
+    --input: 180 18% 15%;
+    --ring: 175 80% 55%;
+    --sidebar-background: 180 28% 6%;
+    --sidebar-foreground: 190 25% 92%;
+    --sidebar-primary: 175 80% 55%;
+    --sidebar-primary-foreground: 180 30% 8%;
+    --sidebar-accent: 180 18% 10%;
+    --sidebar-accent-foreground: 190 25% 92%;
+    --sidebar-border: 180 18% 13%;
+    --sidebar-ring: 175 80% 55%;
+    --glow-green: 0 0 20px hsla(175, 80%, 55%, 0.3);
+    --glow-cyan: 0 0 20px hsla(220, 70%, 55%, 0.3);
+    --glow-red: 0 0 20px hsla(0, 80%, 55%, 0.3);
+    --glow-purple: 0 0 20px hsla(300, 70%, 60%, 0.3);
+  }
 }
 
 @layer base {

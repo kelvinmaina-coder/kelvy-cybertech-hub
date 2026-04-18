@@ -1,4 +1,4 @@
-﻿import { useState, useCallback, useMemo, memo, useEffect } from "react";
+﻿import { useState, useCallback, useMemo, memo, useEffect, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import NeuralNetworkBackground from "@/components/NeuralNetworkBackground";
 import QuickActionsBar from "./QuickActionsBar";
@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import AIGatewayStatus from "./AIGatewayStatus";
 import { NotificationBell } from "./NotificationBell";
 import TerminalOverlay from "./TerminalOverlay";
 
@@ -174,13 +175,15 @@ const DashboardLayout = memo(({ children }: { children: React.ReactNode }) => {
       )}
       
       <main className="flex-1 overflow-auto">
-        <div className="p-4 md:p-6">
-          <div className="flex justify-end items-center gap-2 mb-4">
+        <div className="flex flex-col gap-3 justify-end items-end mb-4 md:flex-row md:items-center p-4">
+          <AIGatewayStatus />
+          <div className="flex items-center gap-2">
             <NotificationBell />
             <ThemeSwitcher />
           </div>
-          {children}
-          <div className="mt-8 rounded-3xl border border-border bg-card/80 p-4 text-sm text-muted-foreground shadow-xl backdrop-blur-xl">
+        </div>
+        {children}
+        <div className="mt-8 rounded-3xl border border-border bg-card/80 p-4 text-sm text-muted-foreground shadow-xl backdrop-blur-xl">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="font-semibold text-foreground">Quick Portal</p>

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Settings, Users, Shield, UserCheck, UserX, Search, Loader2, LogOut, Send, Bell, Camera, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "@/hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -16,7 +18,9 @@ interface UserProfile {
 }
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const { user, profile, hasRole, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const isSuperAdmin = hasRole("super_admin");
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,11 +138,67 @@ export default function SettingsPage() {
                   <p className="text-sm font-semibold">{profile?.company || "Kelvy CyberTech Hub"}</p>
                 </div>
               </div>
-              
-              <div className="pt-4 border-t border-border/50">
-                <div className="flex items-center gap-2 text-primary">
-                  <Shield className="w-4 h-4" />
-                  <span className="text-[11px] font-bold font-mono uppercase tracking-widest">AI-Verified Identity Operator</span>
+              flex-col gap-3">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Shield className="w-4 h-4" />
+                    <span className="text-[11px] font-bold font-mono uppercase tracking-widest">AI-Verified Identity Operator</span>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground font-mono">Theme</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Dark', value: 'dark' },
+                        { label: 'Light', value: 'light' },
+                        { label: 'Cyberpunk', value: 'cyberpunk' },
+                        { label: 'Sunset', value: 'sunset' },
+                        { label: 'Forest', value: 'forest' },
+                        { label: 'Ocean', value: 'ocean' },
+                        { label: 'Royal', value: 'royal' },
+                        { label: 'Matrix', value: 'matrix' },
+                        { label: 'Midnight', value: 'midnight' },
+                        { label: 'Aurora', value: 'aurora' },
+                      ].map((themeOption) => (
+                        <button
+                          key={themeOption.value}
+                          type="button"
+                          onClick={() => setTheme(themeOption.value as any)}
+                          className={`rounded-lg border px-3 py-2 text-xs transition ${theme === themeOption.value ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-foreground hover:bg-muted'}`}
+                        >
+                          {themeOption.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div
+                  <div className="flex items-center gap-2 text-primary">
+                    <Shield className="w-4 h-4" />
+                    <span className="text-[11px] font-bold font-mono uppercase tracking-widest">AI-Verified Identity Operator</span>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground font-mono">Theme</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Dark', value: 'dark' },
+                        { label: 'Light', value: 'light' },
+                        { label: 'Cyberpunk', value: 'cyberpunk' },
+                        { label: 'Sunset', value: 'sunset' },
+                        { label: 'Forest', value: 'forest' },
+                        { label: 'Ocean', value: 'ocean' },
+                        { label: 'Royal', value: 'royal' },
+                        { label: 'Matrix', value: 'matrix' },
+                        { label: 'Midnight', value: 'midnight' },
+                        { label: 'Aurora', value: 'aurora' },
+                      ].map((themeOption) => (
+                        <button
+                          key={themeOption.value}
+                          type="button"
+                          onClick={() => setTheme(themeOption.value as any)}
+                          className={`rounded-lg border px-3 py-2 text-xs transition ${theme === themeOption.value ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-border text-foreground hover:bg-muted'}`}
+                        >
+                          {themeOption.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -24,6 +24,7 @@ export const useAI = () => {
       retries?: number;
     } = {}
   ): Promise<string> => {
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
     const { model = "qwen2.5:7b", systemPrompt, image, retries = 3 } = options;
     setLoading(true);
 
@@ -39,7 +40,7 @@ export const useAI = () => {
               system_prompt: systemPrompt || "You are a helpful AI assistant in the Kelvy CyberTech Hub."
             };
 
-        const response = await fetch(`http://localhost:8000${endpoint}`, {
+        const response = await fetch(`${backendUrl}${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
@@ -83,8 +84,9 @@ export const useAI = () => {
   }, []);
 
   const checkHealth = async () => {
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
     try {
-      const res = await fetch("http://localhost:8000/health");
+      const res = await fetch(`${backendUrl}/health`);
       return await res.json();
     } catch {
       return { status: "offline", ollama: false };
