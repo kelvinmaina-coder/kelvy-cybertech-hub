@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Shield, AlertTriangle, CheckCircle, XCircle, Play, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Shield, AlertTriangle, CheckCircle, XCircle, Activity, Loader2, ArrowRight, TrendingUp, ShieldCheck, Zap } from "lucide-react";
 import MetricCard from "@/components/MetricCard";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
@@ -55,21 +56,51 @@ export default function SecurityHub() {
     return acc;
   }, {});
   const barData = Object.entries(toolCounts).slice(0, 8).map(([tool, count]) => ({ tool, count }));
+  const securityScore = Math.max(40, Math.min(98, 100 - (criticalCount * 12 + highCount * 8 + (severityCounts["medium"] || 0) * 4)));
+  const scoreImprovement = Math.max(-12, Math.min(18, (severityCounts["low"] || 0) - (criticalCount + highCount)));
+  const darkWebBreaches = events.filter(e => e.source === "darkweb" || e.category === "darkweb").length;
+  const achievementBadges = [
+    { title: "AI Threat Hunting", icon: <Zap className="w-4 h-4" /> },
+    { title: "Weekly Dark Web Scan", icon: <ShieldCheck className="w-4 h-4" /> },
+    { title: "Compliance Ready", icon: <Shield className="w-4 h-4" /> },
+    { title: "Posture Intelligence", icon: <TrendingUp className="w-4 h-4" /> },
+  ];
 
   const filtered = filter === "all" ? events : events.filter(e => e.severity === filter);
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-destructive">SECURITY OPERATIONS CENTER</h1>
-        <p className="text-sm text-muted-foreground font-mono">Real-time threat monitoring & response</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-destructive">SECURITY OPERATIONS CENTER</h1>
+          <p className="text-sm text-muted-foreground font-mono">Real-time threat monitoring & response</p>
+        </div>
+        <Link to="/tools" className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium transition hover:bg-muted hover:text-foreground">
+          <span>Open Linux Tools</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <MetricCard icon={Shield} title="Threats Blocked" value={String(blocked)} variant="red" change="From events" />
+        <MetricCard icon={TrendingUp} title="Security Score" value={`${securityScore}`} variant="purple" change={`${scoreImprovement >= 0 ? `+${scoreImprovement}` : `${scoreImprovement}`} improvement`} />
+        <MetricCard icon={AlertTriangle} title="Dark Web Alerts" value={String(darkWebBreaches)} variant="destructive" change="Weekly scan" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        {achievementBadges.map((badge) => (
+          <div key={badge.title} className="rounded-2xl border border-border bg-card p-4 flex items-center gap-3 text-sm font-medium text-foreground hover:border-accent hover:shadow-[0_0_20px_rgba(56,189,248,0.2)] transition">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent">{badge.icon}</div>
+            <div>{badge.title}</div>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <MetricCard icon={Shield} title="Threats Blocked" value={String(blocked)} variant="red" change="From events" />
         <MetricCard icon={AlertTriangle} title="Critical" value={String(criticalCount)} variant="orange" />
         <MetricCard icon={CheckCircle} title="Scans Run" value={String(scans.length)} variant="green" />
         <MetricCard icon={XCircle} title="High Severity" value={String(highCount)} variant="cyan" change={`${events.length} total events`} />
+        <MetricCard icon={Activity} title="Total Events" value={String(events.length)} variant="secondary" change="Across all sources" />
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -79,7 +110,7 @@ export default function SecurityHub() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={pieData} dataKey="value" cx="50%" cy="50%" innerRadius={45} outerRadius={75} label={({ name, value }) => `${name}: ${value}`}>
-                  {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                  {pieData.map(({ name }, i) => <Cell key={name || i} fill={pieColors[i % pieColors.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ background: "hsl(222, 44%, 10%)", border: "1px solid hsl(222, 30%, 18%)", borderRadius: 8, fontSize: 12 }} />
               </PieChart>
@@ -118,22 +149,26 @@ export default function SecurityHub() {
             ))}
           </div>
         </div>
-        {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
-        ) : filtered.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-8 font-mono">No security events. System is clean.</p>
-        ) : (
-          <div className="space-y-1 max-h-[300px] overflow-y-auto">
-            {filtered.map(e => (
-              <div key={e.id} className="flex items-center gap-3 p-2 rounded bg-muted/20 text-sm animate-slide-in">
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${severityColors[e.severity || "info"]}`}>{e.severity || "info"}</span>
-                <span className="font-mono text-foreground flex-1 truncate">{e.event_type || "event"}</span>
-                <span className="text-muted-foreground text-xs hidden sm:block truncate max-w-[200px]">{e.description}</span>
-                <span className="text-xs text-muted-foreground font-mono shrink-0">{new Date(e.created_at).toLocaleTimeString()}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {(() => {
+          if (loading) {
+            return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;
+          }
+          if (filtered.length === 0) {
+            return <p className="text-xs text-muted-foreground text-center py-8 font-mono">No security events. System is clean.</p>;
+          }
+          return (
+            <div className="space-y-1 max-h-[300px] overflow-y-auto">
+              {filtered.map(e => (
+                <div key={e.id} className="flex items-center gap-3 p-2 rounded bg-muted/20 text-sm animate-slide-in">
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-mono uppercase ${severityColors[e.severity || "info"]}`}>{e.severity || "info"}</span>
+                  <span className="font-mono text-foreground flex-1 truncate">{e.event_type || "event"}</span>
+                  <span className="text-muted-foreground text-xs hidden sm:block truncate max-w-[200px]">{e.description}</span>
+                  <span className="text-xs text-muted-foreground font-mono shrink-0">{new Date(e.created_at).toLocaleTimeString()}</span>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       <div className="rounded-lg border border-border bg-card p-4">

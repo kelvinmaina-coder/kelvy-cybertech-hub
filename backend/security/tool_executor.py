@@ -148,50 +148,149 @@ Respond in JSON format:
             "recommendations": ["Start Ollama with: ollama serve", "Pull model: ollama pull qwen2.5:7b"]
         }
 def execute_tool(tool: str, target: str, options: str = "") -> Dict[str, Any]:
-    """Execute a real system tool"""
+    """Execute a real system tool with cross-platform support"""
     tool_info = TOOLS.get(tool)
     if not tool_info:
         return {"error": f"Tool '{tool}' not found", "output": "", "success": False}
+
     # Build the command
     cmd_parts = [tool_info["command"]]
     if options:
-        cmd_parts.append(options)
+        cmd_parts.extend(options.split())  # Split options properly
     if target and target != "default":
         cmd_parts.append(target)
     command = " ".join(cmd_parts)
-    try:
-        # Execute the command with timeout
-        result = subprocess.run(
-            command,
-            shell=True,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            executable="/bin/bash" if os.name != "nt" else None
-        )
-        output = result.stdout if result.stdout else result.stderr
-        if not output:
-            output = "Command executed but produced no output"
-        return {
-            "success": True,
-            "output": output[:5000],  # Limit output size
+
+    # Cross-platform execution strategies
+    execution_strategies = []
+
+    if os.name == "nt":  # Windows
+        # Strategy 1: Direct Windows command (for Windows-native tools)
+        execution_strategies.append({
+            "method": "direct",
             "command": command,
-            "exit_code": result.returncode
+            "shell": True
+        })
+
+        # Strategy 2: WSL (Windows Subsystem for Linux)
+        execution_strategies.append({
+            "method": "wsl",
+            "command": f'wsl {command}',
+            "shell": True
+        })
+
+        # Strategy 3: Git Bash
+        git_bash_paths = [
+            "C:\\Program Files\\Git\\bin\\bash.exe",
+            "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+            "C:\\Git\\bin\\bash.exe"
+        ]
+        for bash_path in git_bash_paths:
+            if os.path.exists(bash_path):
+                execution_strategies.append({
+                    "method": "gitbash",
+                    "command": f'"{bash_path}" -c "{command}"',
+                    "shell": True
+                })
+                break
+
+        # Strategy 4: Docker (for Linux tools)
+        docker_commands = {
+            "nmap": 'docker run --rm instrumentisto/nmap',
+            "nikto": 'docker run --rm sullo/nikto',
+            "sqlmap": 'docker run --rm paoloo/sqlmap',
+            "nuclei": 'docker run --rm projectdiscovery/nuclei',
+            "gobuster": 'docker run --rm ojasookert/gobuster',
+            "ffuf": 'docker run --rm ffuf/ffuf',
+            "amass": 'docker run --rm caffix/amass',
+            "subfinder": 'docker run --rm projectdiscovery/subfinder',
+            "dnsx": 'docker run --rm projectdiscovery/dnsx',
+            "masscan": 'docker run --rm uzyexe/masscan',
+            "wpscan": 'docker run --rm wpscanteam/wpscan',
+            "dirb": 'docker run --rm hackingyseguridad/dirb',
+            "hydra": 'docker run --rm vanhauser/hydra',
+            "john": 'docker run --rm openwall/john',
+            "hashcat": 'docker run --rm hashcat/hashcat',
+            "metasploit": 'docker run --rm -it metasploitframework/metasploit-framework',
+            "volatility": 'docker run --rm sk4la/volatility',
+            "binwalk": 'docker run --rm craff/binwalk',
+            "exiftool": 'docker run --rm beevelop/exiftool',
+            "burpsuite": 'docker run --rm -p 8080:8080 portswigger/burpsuite-community',
+            "zaproxy": 'docker run --rm -p 8080:8080 owasp/zap2docker-stable',
+            "dalfox": 'docker run --rm hahwul/dalfox',
+            "aircrack-ng": 'docker run --rm aircrack-ng',
+            "openssl": 'docker run --rm -it frapsoft/openssl',
+            "curl": 'docker run --rm curlimages/curl',
+            "ping": 'docker run --rm alpine ping'
         }
-    except subprocess.TimeoutExpired:
-        return {
-            "success": False,
-            "output": "Command timed out after 30 seconds",
+
+        if tool in docker_commands:
+            docker_cmd = docker_commands[tool]
+            if options:
+                docker_cmd += f" {options}"
+            if target and target != "default":
+                docker_cmd += f" {target}"
+            execution_strategies.append({
+                "method": "docker",
+                "command": docker_cmd,
+                "shell": True
+            })
+
+    else:  # Linux/Unix
+        execution_strategies.append({
+            "method": "direct",
             "command": command,
-            "error": "Timeout"
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "output": f"Error executing command: {str(e)}",
-            "command": command,
-            "error": str(e)
-        }
+            "shell": True
+        })
+
+    # Try each execution strategy
+    last_error = None
+    for strategy in execution_strategies:
+        try:
+            result = subprocess.run(
+                strategy["command"],
+                shell=strategy["shell"],
+                capture_output=True,
+                text=True,
+                timeout=60,  # Increased timeout for tools
+                cwd=os.getcwd()
+            )
+
+            output = result.stdout if result.stdout else result.stderr
+            if not output:
+                output = "Command executed but produced no output"
+
+            # Check if command actually ran (not just "command not found")
+            if result.returncode == 0 or (result.returncode != 0 and output and "not found" not in output.lower()):
+                return {
+                    "success": True,
+                    "output": output[:10000],  # Increased limit
+                    "command": strategy["command"],
+                    "method": strategy["method"],
+                    "exit_code": result.returncode
+                }
+            else:
+                last_error = output
+
+        except subprocess.TimeoutExpired:
+            return {
+                "success": False,
+                "output": f"Command timed out after 60 seconds using {strategy['method']}",
+                "command": strategy["command"],
+                "method": strategy["method"],
+                "error": "Timeout"
+            }
+        except Exception as e:
+            last_error = str(e)
+            continue
+
+    # If all strategies failed
+    return {
+        "success": False,
+        "output": f"Tool execution failed. Last error: {last_error or 'Unknown error'}",
+        "command": command,
+        "error": "All execution methods failed"
+    }
 @router.post("/run-tool")
 async def run_tool(request: ToolRequest):
     """Run a security tool and return output"""

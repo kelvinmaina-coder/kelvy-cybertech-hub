@@ -1,94 +1,129 @@
--- Update profiles for online status
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS last_seen TIMESTAMP;
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_online BOOLEAN DEFAULT FALSE;
+﻿-- Create all necessary tables for Kelvy CyberTech Hub
 
--- User presence tracking
-CREATE TABLE IF NOT EXISTS user_presence (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  status TEXT DEFAULT 'offline',
-  last_seen TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
+-- Profiles table (extends auth.users)
+CREATE TABLE IF NOT EXISTS profiles (
+    id UUID REFERENCES auth.users(id) PRIMARY KEY,
+    full_name TEXT,
+    phone TEXT,
+    role TEXT DEFAULT 'client',
+    approved BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Calls table (enhance existing)
-ALTER TABLE calls ADD COLUMN IF NOT EXISTS is_group BOOLEAN DEFAULT FALSE;
-ALTER TABLE calls ADD COLUMN IF NOT EXISTS participants JSONB;
-
--- Group call participants
-CREATE TABLE IF NOT EXISTS group_call_participants (
-  id SERIAL PRIMARY KEY,
-  call_id INTEGER REFERENCES calls(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  joined_at TIMESTAMP,
-  left_at TIMESTAMP,
-  had_raised_hand BOOLEAN DEFAULT FALSE,
-  was_speaker BOOLEAN DEFAULT FALSE
+-- Clients table
+CREATE TABLE IF NOT EXISTS clients (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE,
+    phone TEXT,
+    company TEXT,
+    status TEXT DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Phone verifications table
-CREATE TABLE IF NOT EXISTS phone_verifications (
-  id SERIAL PRIMARY KEY,
-  phone TEXT NOT NULL,
-  code TEXT NOT NULL,
-  expires_at TIMESTAMP DEFAULT NOW() + INTERVAL '10 minutes',
-  verified BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
+-- Invoices table
+CREATE TABLE IF NOT EXISTS invoices (
+    id SERIAL PRIMARY KEY,
+    invoice_number TEXT UNIQUE,
+    client_id INTEGER REFERENCES clients(id),
+    amount DECIMAL NOT NULL,
+    status TEXT DEFAULT 'pending',
+    due_date DATE,
+    paid_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Automation logs table
-CREATE TABLE IF NOT EXISTS automation_logs (
-  id SERIAL PRIMARY KEY,
-  task_name TEXT NOT NULL,
-  status TEXT,
-  output TEXT,
-  duration_ms INTEGER,
-  created_at TIMESTAMP DEFAULT NOW()
+-- Tickets table
+CREATE TABLE IF NOT EXISTS tickets (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    priority TEXT DEFAULT 'medium',
+    status TEXT DEFAULT 'open',
+    assigned_to UUID REFERENCES profiles(id),
+    created_by UUID REFERENCES profiles(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Messages table
+CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    user_id UUID REFERENCES profiles(id),
+    room_id TEXT DEFAULT 'general',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Scans table
+CREATE TABLE IF NOT EXISTS scans (
+    id SERIAL PRIMARY KEY,
+    tool TEXT NOT NULL,
+    target TEXT,
+    args JSONB,
+    raw_output TEXT,
+    ai_analysis TEXT,
+    created_by UUID REFERENCES profiles(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Security events table
+CREATE TABLE IF NOT EXISTS security_events (
+    id SERIAL PRIMARY KEY,
+    event_type TEXT,
+    severity TEXT,
+    source_ip TEXT,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Meetings table
+CREATE TABLE IF NOT EXISTS meetings (
+    id SERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    scheduled_for TIMESTAMP,
+    duration_minutes INTEGER DEFAULT 30,
+    meeting_link TEXT UNIQUE,
+    created_by UUID REFERENCES profiles(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Journal entries table
+CREATE TABLE IF NOT EXISTS journal_entries (
+    id SERIAL PRIMARY KEY,
+    user_id UUID REFERENCES profiles(id),
+    content TEXT NOT NULL,
+    mood INTEGER DEFAULT 5,
+    created_at TIMESTAMP DEFAULT NOW()
 );
 
 -- Enable RLS
-ALTER TABLE user_presence ENABLE ROW LEVEL SECURITY;
-ALTER TABLE group_call_participants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE phone_verifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE automation_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE scans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE security_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meetings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE journal_entries ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for user_presence
-CREATE POLICY "Users can see all presence" ON user_presence FOR SELECT USING (true);
-CREATE POLICY "Users can insert own presence" ON user_presence FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own presence" ON user_presence FOR UPDATE USING (auth.uid() = user_id);
+-- RLS Policies
+CREATE POLICY "Users can read own profile" ON profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Anyone can read clients" ON clients FOR SELECT USING (true);
+CREATE POLICY "Authenticated can insert clients" ON clients FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can read own messages" ON messages FOR SELECT USING (true);
+CREATE POLICY "Users can insert messages" ON messages FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Users can read own scans" ON scans FOR SELECT USING (auth.uid() = created_by);
+CREATE POLICY "Users can insert scans" ON scans FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
--- RLS Policies for group_call_participants
-CREATE POLICY "Users can see group call participants" ON group_call_participants FOR SELECT USING (true);
-CREATE POLICY "Users can insert group call participants" ON group_call_participants FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update own group call participation" ON group_call_participants FOR UPDATE USING (auth.uid() = user_id);
+-- Enable Realtime
+ALTER TABLE messages REPLICA IDENTITY FULL;
+ALTER TABLE security_events REPLICA IDENTITY FULL;
+ALTER TABLE scans REPLICA IDENTITY FULL;
 
--- RLS Policies for phone_verifications
--- Allow anonymous users or anyone to verify phones via API/Edge functions, so keeping it permissive for inserts
-CREATE POLICY "Anyone can insert phone verifications" ON phone_verifications FOR INSERT WITH CHECK (true);
-CREATE POLICY "Anyone can select phone verifications" ON phone_verifications FOR SELECT USING (true);
-CREATE POLICY "Anyone can update phone verifications" ON phone_verifications FOR UPDATE USING (true);
-
--- RLS Policies for automation_logs
--- Only admins/technicians might need policy, but keeping simple for now
-CREATE POLICY "Users can see automation logs" ON automation_logs FOR SELECT USING (true);
-CREATE POLICY "System can insert automation logs" ON automation_logs FOR INSERT WITH CHECK (true);
-
--- Ensure Calls policies allow listing all my calls
--- (Assuming there is a policy for select on calls already, adding if missing)
--- CREATE POLICY "Users can view their own calls" ON calls FOR SELECT USING (caller_id = auth.uid() OR receiver_id = auth.uid());
-
--- Domain visits tracking
-CREATE TABLE IF NOT EXISTS domain_visits (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  domain_slug TEXT,
-  visited_at TIMESTAMP DEFAULT NOW()
-);
-
--- User preferences for dashboard layout
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS dashboard_layout JSONB DEFAULT '{"order": ["cybersecurity", "networking", "software-dev", "data-analytics", "ai-ml", "cloud-devops", "mobile", "business", "team"]}';
-
--- RLS Policies for domain_visits
-ALTER TABLE domain_visits ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can track their own domain visits" ON domain_visits FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can select their own domain visits" ON domain_visits FOR SELECT USING (auth.uid() = user_id);
+DROP PUBLICATION IF EXISTS supabase_realtime;
+CREATE PUBLICATION supabase_realtime;
+ALTER PUBLICATION supabase_realtime ADD TABLE messages, security_events, scans;

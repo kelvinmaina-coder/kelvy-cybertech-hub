@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import NeuralNetworkBackground from "@/components/NeuralNetworkBackground";
 import { Shield, Bot, BarChart3, Users, Network, Server, FileText, Code } from "lucide-react";
 import EnhancedAIChat from "@/components/EnhancedAIChat";
 import ThreeScene from "@/components/ThreeScene";

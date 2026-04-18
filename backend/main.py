@@ -5,9 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 # Import routers
 from api.tools import router as tools_router
+from api.security import router as security_router
+from websocket.signaling import signaling_endpoint
 from api.ai import router as ai_router
 from api.calls import router as calls_router
-from security.tool_executor import router as security_router
 from automation.api import router as automation_router
 from ide.api import router as ide_router
 from network.api import router as network_router
@@ -47,7 +48,6 @@ app.add_middleware(
 app.include_router(tools_router, prefix="/api/security", tags=["Security Tools"])
 app.include_router(ai_router, prefix="/api/ollama", tags=["Ollama AI"])
 app.include_router(calls_router, prefix="/api", tags=["Calls & Meetings"])
-app.include_router(security_router, prefix="/api/security", tags=["Linux Tools"])
 app.include_router(automation_router, prefix="/api/automation", tags=["Automation"])
 app.include_router(ide_router, prefix="/api/ide", tags=["IDE"])
 app.include_router(network_router, prefix="/api/network", tags=["Network"])

@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { 
   Shield, Network, Code, BarChart3, Bot, Cloud, 
   Briefcase, MessageSquare, Zap, Activity, Users,
-  ArrowRight, ShieldAlert, Cpu, Database, Server
+  ArrowRight, ShieldAlert, Cpu, Database, Server,
+  Bell, Globe
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -47,7 +48,7 @@ export default function Dashboard() {
     { 
       title: "CYBERSECURITY", 
       icon: Shield, 
-      path: "/cybersecurity", 
+      path: "/security", 
       color: "border-red-500/50 hover:bg-red-500/10",
       iconColor: "text-red-500",
       metrics: [
@@ -59,7 +60,7 @@ export default function Dashboard() {
     { 
       title: "NETWORKING", 
       icon: Network, 
-      path: "/networking", 
+      path: "/network", 
       color: "border-cyan-500/50 hover:bg-cyan-500/10",
       iconColor: "text-cyan-500",
       metrics: [
@@ -71,7 +72,7 @@ export default function Dashboard() {
     { 
       title: "SOFTWARE DEV", 
       icon: Code, 
-      path: "/software-dev", 
+      path: "/ide", 
       color: "border-purple-500/50 hover:bg-purple-500/10",
       iconColor: "text-purple-500",
       metrics: [
@@ -83,7 +84,7 @@ export default function Dashboard() {
     { 
       title: "DATA ANALYTICS", 
       icon: BarChart3, 
-      path: "/data-analytics", 
+      path: "/analytics", 
       color: "border-blue-500/50 hover:bg-blue-500/10",
       iconColor: "text-blue-500",
       metrics: [
@@ -107,7 +108,7 @@ export default function Dashboard() {
     { 
       title: "CLOUD & DEVOPS", 
       icon: Cloud, 
-      path: "/cloud-devops", 
+      path: "/automation", 
       color: "border-sky-500/50 hover:bg-sky-500/10",
       iconColor: "text-sky-500",
       metrics: [
@@ -119,7 +120,7 @@ export default function Dashboard() {
     { 
       title: "BUSINESS", 
       icon: Briefcase, 
-      path: "/business", 
+      path: "/business/crm", 
       color: "border-amber-500/50 hover:bg-amber-500/10",
       iconColor: "text-amber-500",
       metrics: [
@@ -131,7 +132,7 @@ export default function Dashboard() {
     { 
       title: "COMMUNICATION", 
       icon: MessageSquare, 
-      path: "/communication", 
+      path: "/communication/chat", 
       color: "border-indigo-500/50 hover:bg-indigo-500/10",
       iconColor: "text-indigo-500",
       metrics: [
@@ -142,8 +143,19 @@ export default function Dashboard() {
     }
   ];
 
+  const quickLinks = [
+    { name: "Security Hub", path: "/security", icon: Shield },
+    { name: "Threat Radar", path: "/cybersecurity/threat-radar", icon: Zap },
+    { name: "Dark Web", path: "/cybersecurity/darkweb", icon: Globe },
+    { name: "AI Assistant", path: "/ai", icon: Bot },
+    { name: "Executive", path: "/analytics", icon: BarChart3 },
+    { name: "Client Portal", path: "/portal", icon: Users },
+    { name: "Notifications", path: "/notifications", icon: Bell },
+    { name: "Tools", path: "/tools", icon: Terminal },
+  ];
+
   return (
-    <div className="space-y-8 max-w-[1400px] mx-auto">
+    <div className="space-y-6 max-w-[1400px] mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-display font-bold text-primary tracking-tight text-glow-green">COMMAND CENTER</h1>
@@ -170,32 +182,45 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {quickLinks.map((link) => (
+          <Link
+            key={link.path}
+            to={link.path}
+            className="flex items-center gap-2 rounded-2xl border border-border bg-background/80 px-3 py-3 text-sm text-foreground transition hover:bg-accent/10 hover:border-accent"
+          >
+            <link.icon className="w-4 h-4 text-primary" />
+            <span className="truncate">{link.name}</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
           <Link
             key={card.path}
             to={card.path}
-            className={`flex flex-col h-[220px] glass-card border rounded-2xl p-6 transition-all duration-300 group ${card.color} relative overflow-hidden`}
+            className={`flex flex-col min-h-[150px] glass-card border rounded-2xl p-4 transition-all duration-200 group ${card.color} relative overflow-hidden hover:shadow-lg`}
           >
             {/* Background Decoration */}
-            <card.icon className={`absolute -right-4 -bottom-4 w-32 h-32 opacity-[0.03] rotate-12 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-0`} />
+            <card.icon className={`absolute -right-2 -bottom-2 w-16 h-16 opacity-[0.02] rotate-12 transition-transform duration-500`} />
             
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl bg-background border border-border group-hover:border-current transition-colors`}>
-                  <card.icon className={`w-6 h-6 ${card.iconColor}`} />
+                <div className={`p-2 rounded-xl bg-background border border-border group-hover:border-current transition-colors`}>
+                  <card.icon className={`w-4 h-4 ${card.iconColor}`} />
                 </div>
-                <h2 className="text-lg font-display font-bold tracking-wide uppercase">{card.title}</h2>
+                <h2 className="text-sm font-display font-bold tracking-wide uppercase">{card.title}</h2>
               </div>
-              <ArrowRight className="w-5 h-5 text-muted-foreground opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+              <ArrowRight className="w-4 h-4 text-muted-foreground opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
             </div>
 
-            <div className="flex-1 space-y-4">
-              <div className="flex justify-between gap-4">
+            <div className="flex-1 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
                 {card.metrics.map((metric, idx) => (
                   <div key={idx} className="flex flex-col">
-                    <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-wider">{metric.label}</span>
-                    <span className={`text-xl font-bold font-mono mt-0.5 ${metric.subColor || 'text-foreground'}`}>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">{metric.label}</span>
+                    <span className={`text-lg font-bold font-mono mt-0.5 ${metric.subColor || 'text-foreground'}`}>
                       {metric.value}
                     </span>
                   </div>
@@ -204,7 +229,7 @@ export default function Dashboard() {
             </div>
 
             <div className="mt-auto">
-              <div className={`inline-flex items-center gap-2 text-[10px] font-bold py-2 px-4 rounded-lg bg-background border border-border group-hover:border-current transition-all uppercase tracking-widest`}>
+              <div className={`inline-flex items-center gap-2 text-[10px] font-bold py-1.5 px-3 rounded-full bg-background border border-border group-hover:border-current transition-all uppercase tracking-widest`}>
                 {card.btnText}
               </div>
             </div>

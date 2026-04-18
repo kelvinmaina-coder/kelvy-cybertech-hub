@@ -1,171 +1,203 @@
-import { useState } from "react";
+﻿import { useState, useCallback, useMemo, memo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import NeuralNetworkBackground from "@/components/NeuralNetworkBackground";
+import QuickActionsBar from "./QuickActionsBar";
 import {
-  LayoutDashboard, Shield, Bot, Users, Briefcase, Ticket,
-  BarChart3, Network, Code, Settings, Terminal, ChevronLeft,
-  ChevronRight, Zap, Globe, Menu, LogOut, MessageSquare, Bell,
-  Phone, Calendar, Wifi, Server, Database, Brain, Fingerprint,
-  Smartphone, FileText, BookOpen, Activity, Clock, AlertTriangle,
-  CheckCircle, Video, Mic, Monitor, UserPlus, Mail, Lock, Unlock,
-  Eye, Cloud, ChevronDown, ArrowLeft
+  LayoutDashboard,
+  Shield,
+  Bot,
+  Users,
+  Briefcase,
+  Ticket,
+  BarChart3,
+  Network,
+  Code,
+  Settings,
+  Terminal,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  Home,
+  Phone,
+  Video,
+  Calendar,
+  MessageSquare,
+  Bell,
+  User,
+  LogOut,
+  Database,
+  Cloud,
+  ShoppingCart,
+  TrendingUp,
+  FileText,
+  PenTool,
+  Search,
+  Mail,
+  Mic,
+  BookOpen,
+  Star
 } from "lucide-react";
-import { useAuth, AppRole } from "@/hooks/useAuth";
-import { useTheme } from "@/hooks/useTheme";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-import NotificationBell from "@/components/NotificationBell";
-import IncomingCallModal from "@/components/IncomingCallModal";
-import { usePresence } from "@/hooks/usePresence";
-import kelvyLogo from "@/assets/kelvy-logo.png";
+import { useAuth } from "@/hooks/useAuth";
+import { ThemeSwitcher } from "./ThemeSwitcher";
+import { NotificationBell } from "./NotificationBell";
+import TerminalOverlay from "./TerminalOverlay";
 
 interface NavItem {
-  icon: any;
-  label: string;
-  path: string;
-  roles: AppRole[];
-  subItems?: NavItem[];
+  name: string;
+  href: string;
+  icon: React.ReactNode;
+  roles?: string[];
 }
 
-const navItems: NavItem[] = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Shield, label: "Cybersecurity", path: "/cybersecurity", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Network, label: "Networking", path: "/networking", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Code, label: "Software Dev", path: "/software-dev", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: BarChart3, label: "Data Analytics", path: "/data-analytics", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Bot, label: "AI/ML", path: "/ai-ml", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Briefcase, label: "Business", path: "/business", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: MessageSquare, label: "Communication", path: "/communication", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-  { icon: Settings, label: "Settings", path: "/settings", roles: ["super_admin", "manager", "security_analyst", "technician", "client", "guest"] },
-];
-
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { roles, profile, signOut } = useAuth();
-  const { scanlineEnabled } = useTheme();
+const DashboardLayout = memo(({ children }: { children: React.ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [expandedNav, setExpandedNav] = useState<Record<string, boolean>>({});
-  usePresence(); // Keep presence updated globally
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
 
-  const currentPath = location.pathname;
-  const currentNav = navItems.find(item => item.path === currentPath);
-  const showBackButton = currentPath !== "/dashboard" && currentPath !== "/";
+  const navItems: NavItem[] = [
+    { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard className="w-5 h-5" /> },
+    { name: "Security", href: "/security", icon: <Shield className="w-5 h-5" />, roles: ["super_admin", "security_analyst"] },
+    { name: "Network", href: "/network", icon: <Network className="w-5 h-5" />, roles: ["super_admin", "security_analyst"] },
+    { name: "Tools", href: "/tools", icon: <Terminal className="w-5 h-5" />, roles: ["super_admin", "security_analyst", "technician"] },
+    { name: "AI Assistant", href: "/ai", icon: <Bot className="w-5 h-5" /> },
+    { name: "CRM", href: "/crm", icon: <Users className="w-5 h-5" />, roles: ["super_admin", "manager"] },
+    { name: "ERP", href: "/erp", icon: <Briefcase className="w-5 h-5" />, roles: ["super_admin", "manager"] },
+    { name: "ITSM", href: "/itsm", icon: <Ticket className="w-5 h-5" />, roles: ["super_admin", "technician"] },
+    { name: "Analytics", href: "/analytics", icon: <BarChart3 className="w-5 h-5" />, roles: ["super_admin", "manager"] },
+    { name: "IDE", href: "/ide", icon: <Code className="w-5 h-5" />, roles: ["super_admin", "technician"] },
+    { name: "Automation", href: "/automation", icon: <Settings className="w-5 h-5" />, roles: ["super_admin", "technician"] },
+    { name: "Chat", href: "/chat", icon: <MessageSquare className="w-5 h-5" /> },
+    { name: "Calls", href: "/calls", icon: <Phone className="w-5 h-5" /> },
+    { name: "Meetings", href: "/meetings", icon: <Calendar className="w-5 h-5" /> },
+    { name: "Journal", href: "/personal/journal", icon: <BookOpen className="w-5 h-5" /> },
+    { name: "Summarize", href: "/personal/summarize", icon: <FileText className="w-5 h-5" /> },
+    { name: "Code Review", href: "/personal/code-review", icon: <Code className="w-5 h-5" /> },
+    { name: "Email", href: "/communication/email-composer", icon: <Mail className="w-5 h-5" /> },
+    { name: "Meeting Notes", href: "/communication/meeting-notes", icon: <Mic className="w-5 h-5" /> },
+    { name: "Social Media", href: "/business/social-media", icon: <TrendingUp className="w-5 h-5" /> },
+    { name: "E-commerce", href: "/business/ecommerce", icon: <ShoppingCart className="w-5 h-5" /> },
+    { name: "SEO", href: "/seo", icon: <Search className="w-5 h-5" /> },
+    { name: "Usage Reports", href: "/data-analytics/reports", icon: <Database className="w-5 h-5" /> },
+    { name: "Client Portal", href: "/portal", icon: <Users className="w-5 h-5" />, roles: ["client"] },
+    { name: "Settings", href: "/settings", icon: <Settings className="w-5 h-5" /> }
+  ];
 
-  const visibleNav = navItems.filter(item => item.roles.some(r => roles.includes(r)));
+  const visibleNavItems = navItems.filter(item => {
+    if (!item.roles) return true;
+    if (!profile?.role) return false;
+    return item.roles.includes(profile.role);
+  });
 
-  const toggleNav = (path: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    setExpandedNav(prev => ({ ...prev, [path]: !prev[path] }));
-  };
-
-  const SidebarContent = () => (
-    <>
-      <div className="flex items-center gap-3 p-4 border-b border-border">
-        <div className="w-10 h-10 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
-          <Shield className="w-6 h-6 text-primary" />
-        </div>
-        {!collapsed && (
-          <div className="min-w-0">
-            <h1 className="font-display text-sm font-bold text-primary truncate text-glow-green">KELVY CYBERTECH</h1>
-            <p className="text-[10px] text-muted-foreground tracking-widest">HUB v2.0</p>
-          </div>
-        )}
-      </div>
-
-      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
-        {visibleNav.map((item) => {
-          const active = location.pathname.startsWith(item.path);
-          
-          return (
-            <Link 
-              key={item.path} 
-              to={item.path} 
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 group
-                ${active ? "bg-primary/10 text-primary border-glow-green" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"}`}>
-              <item.icon className={`w-4 h-4 shrink-0 ${active ? "text-primary" : ""}`} />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="px-2 pb-1">
-        <ThemeSwitcher collapsed={collapsed} />
-      </div>
-
-      {!collapsed && (
-        <div className="p-3 border-t border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-              {(profile?.full_name || "U")[0].toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-foreground truncate">{profile?.full_name || "User"}</p>
-              <p className="text-[10px] text-muted-foreground font-mono truncate">{roles[0] || "client"}</p>
-            </div>
-          </div>
-          <button onClick={signOut} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition font-mono">
-            <LogOut className="w-3 h-3" /> Sign Out
-          </button>
-        </div>
-      )}
-
-      <button onClick={() => setCollapsed(!collapsed)}
-        className="hidden lg:flex items-center justify-center p-3 border-t border-border text-muted-foreground hover:text-foreground transition">
-        {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-      </button>
-    </>
-  );
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey)) return;
+      const key = event.key.toLowerCase();
+      if (key === 'd') return navigate('/dashboard');
+      if (key === 's') return navigate('/security');
+      if (key === 'n') return navigate('/network');
+      if (key === 'a') return navigate('/ai');
+      if (key === 'c') return navigate('/chat');
+      if (key === 'm') return navigate('/meetings');
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
-      {mobileOpen && <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileOpen(false)} />}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-border flex flex-col transition-transform duration-300 lg:hidden ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
-        <SidebarContent />
+    <div className="flex h-screen bg-background">
+      <NeuralNetworkBackground />
+      <QuickActionsBar />
+      <TerminalOverlay />
+      
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col bg-sidebar border-r border-border transition-all duration-300">
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          {!collapsed && <span className="font-bold text-lg text-foreground">Kelvy Hub</span>}
+          <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded-md hover:bg-accent">
+            {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
+        </div>
+        
+        <nav className="flex-1 overflow-y-auto py-4">
+          {visibleNavItems.map((item) => (
+            <Link
+              key={item.href}
+              to={item.href}
+              className="flex items-center gap-3 px-4 py-2 mx-2 rounded-md transition-colors"
+            >
+              {item.icon}
+              {!collapsed && <span>{item.name}</span>}
+            </Link>
+          ))}
+        </nav>
+        
+        <div className="p-4 border-t border-border">
+          <ThemeSwitcher />
+          <button onClick={signOut} className="flex items-center gap-3 mt-2 px-4 py-2 w-full rounded-md hover:bg-accent">
+            <LogOut className="w-5 h-5" />
+            {!collapsed && <span>Logout</span>}
+          </button>
+        </div>
       </aside>
-      <aside className={`hidden lg:flex flex-col bg-sidebar border-r border-border shrink-0 transition-all duration-300 ${collapsed ? "w-16" : "w-56"}`}>
-        <SidebarContent />
-      </aside>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-14 border-b border-border flex items-center justify-between px-4 shrink-0 glass-strong">
-          <div className="flex items-center gap-4">
-            <button className="lg:hidden text-muted-foreground" onClick={() => setMobileOpen(true)}>
-              <Menu className="w-5 h-5" />
-            </button>
-            
-            {showBackButton && (
-              <button 
-                onClick={() => navigate(-1)}
-                className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors flex items-center gap-2"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span className="hidden sm:inline text-xs font-medium">Back</span>
-              </button>
-            )}
-
-            {currentNav && (
-              <div className="flex items-center gap-2">
-                <currentNav.icon className="w-4 h-4 text-primary" />
-                <h2 className="text-sm font-display font-bold uppercase tracking-wider">{currentNav.label}</h2>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3">
+      
+      {/* Mobile menu button */}
+      <button onClick={() => setMobileMenuOpen(true)} className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-md bg-sidebar">
+        <Menu className="w-5 h-5" />
+      </button>
+      
+      {/* Mobile sidebar */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="absolute left-0 top-0 bottom-0 w-64 bg-sidebar border-r border-border">
+            <div className="flex justify-end p-4">
+              <button onClick={() => setMobileMenuOpen(false)}><X className="w-5 h-5" /></button>
+            </div>
+            <nav className="flex-1 overflow-y-auto py-4">
+              {visibleNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-2 mx-2 rounded-md"
+                >
+                  {item.icon}
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </nav>
+          </aside>
+        </div>
+      )}
+      
+      <main className="flex-1 overflow-auto">
+        <div className="p-4 md:p-6">
+          <div className="flex justify-end items-center gap-2 mb-4">
             <NotificationBell />
-            <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-border">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse-glow" />
-              <span className="text-[10px] text-muted-foreground font-mono">NODE_ONLINE</span>
+            <ThemeSwitcher />
+          </div>
+          {children}
+          <div className="mt-8 rounded-3xl border border-border bg-card/80 p-4 text-sm text-muted-foreground shadow-xl backdrop-blur-xl">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="font-semibold text-foreground">Quick Portal</p>
+                <p className="text-xs text-muted-foreground">Use <span className="font-medium">Ctrl+`</span> to open Terminal Mode and access AI-powered commands instantly.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link to="/dashboard" className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent/90">Dashboard</Link>
+                <Link to="/security" className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent/90">Security</Link>
+                <Link to="/cybersecurity/darkweb" className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent/90">Dark Web</Link>
+                <Link to="/data-analytics/executive" className="rounded-full border border-border px-3 py-1 text-xs hover:bg-accent/90">Executive</Link>
+              </div>
             </div>
           </div>
-        </header>
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 cyber-grid relative">
-          {scanlineEnabled && <div className="scanline fixed inset-0 pointer-events-none z-50" />}
-          {children}
-          <IncomingCallModal />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
-}
+});
+
+export default DashboardLayout;
